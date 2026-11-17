@@ -1,0 +1,2 @@
+GRANT SELECT ON public.point_redemptions TO authenticated;
+CREATE POLICY "Coaches read assigned student redemptions" ON public.point_redemptions FOR SELECT TO authenticated USING (public.has_role(auth.uid(), 'coach') AND EXISTS (SELECT 1 FROM public.profiles p WHERE p.id = point_redemptions.user_id AND p.assigned_coach_id = auth.uid()));

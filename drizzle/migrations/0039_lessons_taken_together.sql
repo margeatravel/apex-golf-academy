@@ -1,0 +1,1 @@
+ALTER TABLE public.lessons ADD COLUMN IF NOT EXISTS taken_together boolean NOT NULL DEFAULT false;

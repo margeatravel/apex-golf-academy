@@ -1,0 +1,1 @@
+ALTER TABLE public.recurring_lesson_slots ADD COLUMN IF NOT EXISTS paused_until date;

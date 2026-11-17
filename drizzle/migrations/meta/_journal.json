@@ -1,0 +1,363 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1788119350352,
+      "tag": "0000_count_no_show_as_consumed_lesson",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1788119461435,
+      "tag": "0001_make_lesson_credit_cycles_idempotent",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788184910200,
+      "tag": "0002_open_spot_specific_date",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1788187933882,
+      "tag": "0003_notify_admin_lesson_booked_pass_lesson_id",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1788270637327,
+      "tag": "0004_cron_tokens_and_fix_daily_reminders_job",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1788271023180,
+      "tag": "0005_cron_job_health_check",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1788271053079,
+      "tag": "0006_cron_job_health_grants",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1788271185161,
+      "tag": "0007_cron_job_health_perf",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1788567324739,
+      "tag": "0008_can_preview_student_fn",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1789077311399,
+      "tag": "0009_add_is_paused_to_class_packages",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1789084200011,
+      "tag": "0010_add_is_archived_to_class_packages",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1789097852526,
+      "tag": "0011_restrict_can_preview_student_to_admin",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789140654200,
+      "tag": "0012_add_subscription_pause_columns",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1789152882936,
+      "tag": "0013_get_visible_recurring_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789152916618,
+      "tag": "0014_visible_recurring_slots_effective_package",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1789159074932,
+      "tag": "0015_student_reports_types_and_visibility",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789183175647,
+      "tag": "0016_get_effective_plan_source_of_truth",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789185136677,
+      "tag": "0017_student_onboarding_quiz",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789240869732,
+      "tag": "0018_membership_plan_content",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1789243149450,
+      "tag": "0019_pro_zone_paid_access_rls",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1789256260694,
+      "tag": "0020_billing_plans_apex_ai_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1789258835197,
+      "tag": "0021_pro_zone_catalog_summary",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1789260390998,
+      "tag": "0022_protect_recurring_package_links",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1789260442032,
+      "tag": "0023_add_audited_recurring_package_link_rpc",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1789403143818,
+      "tag": "0024_billing_plans_color_opacity",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1789479086078,
+      "tag": "0025_family_link_requests_engine",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1789479318779,
+      "tag": "0026_family_invite_lookup_functions",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1789486873186,
+      "tag": "0027_trial_grants_full_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1789487275386,
+      "tag": "0028_family_links_student_delete",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1789488074192,
+      "tag": "0029_managed_family_members",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1789494195020,
+      "tag": "0030_family_parent_reads_golf_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1789494987345,
+      "tag": "0031_family_read_videos_and_media",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1789505498130,
+      "tag": "0032_family_access_status",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1789611500931,
+      "tag": "0033_add_onboarding_completed_flag",
+      "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1790102783021,
+      "tag": "0034_add_recurring_slot_pending_move",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1790105605666,
+      "tag": "0035_add_pending_wipe_to_recurring_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1790106675100,
+      "tag": "0036_add_starts_on_to_recurring_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1790195592424,
+      "tag": "0037_add_pending_fields_to_recurring_slots",
+      "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1790196546022,
+      "tag": "0038_visible_recurring_slots_starts_on",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1791478692570,
+      "tag": "0039_lessons_taken_together",
+      "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1791750414124,
+      "tag": "0040_recurring_slot_cadence",
+      "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1791858962323,
+      "tag": "0041_recurring_paused_until",
+      "breakpoints": true
+    },
+    {
+      "idx": 42,
+      "version": "7",
+      "when": 1792186150066,
+      "tag": "0042_migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 43,
+      "version": "7",
+      "when": 1792872667300,
+      "tag": "0043_staff_six_access_areas",
+      "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793029947945,
+      "tag": "0044_migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 45,
+      "version": "7",
+      "when": 1793041046033,
+      "tag": "0045_billing_plan_price_history",
+      "breakpoints": true
+    },
+    {
+      "idx": 46,
+      "version": "7",
+      "when": 1793123325707,
+      "tag": "0046_golf_rounds_tournament_position",
+      "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793418992586,
+      "tag": "0047_coach_redemption_inbox_read_access",
+      "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793568865438,
+      "tag": "0048_app_user_connections",
+      "breakpoints": true
+    },
+    {
+      "idx": 49,
+      "version": "7",
+      "when": 1793572501122,
+      "tag": "0049_migration",
+      "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "7",
+      "when": 1794309513890,
+      "tag": "0050_tighten_open_select_policies",
+      "breakpoints": true
+    }
+  ]
+}
