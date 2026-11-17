@@ -1,0 +1,1 @@
+DELETE FROM public.billing_plans WHERE id = '8ab6d4dc-c3d0-4e1c-bde3-e6b6ade3695e';

@@ -1,0 +1,1 @@
+ALTER TABLE public.lessons ADD COLUMN skip_keep_closed boolean DEFAULT false;

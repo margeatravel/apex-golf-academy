@@ -1,0 +1,1 @@
+UPDATE public.class_packages SET classes_used = 8, classes_remaining = GREATEST(package_size - 8, 0), is_active = true, updated_at = now() WHERE id = '72b74f52-9dcf-4c59-b93a-3aef121489d9';

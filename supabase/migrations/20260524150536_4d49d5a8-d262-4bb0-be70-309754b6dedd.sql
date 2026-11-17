@@ -1,0 +1,1 @@
+UPDATE public.profiles SET full_name = 'Maria Baleva', phone = COALESCE(phone, '+380 96 181 6155') WHERE id = '4a32d653-5ccb-4a41-84c5-74fff6923846';

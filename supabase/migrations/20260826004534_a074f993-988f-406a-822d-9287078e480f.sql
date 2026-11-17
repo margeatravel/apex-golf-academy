@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.broadcast_notifications_send_push() FROM PUBLIC, anon, authenticated;

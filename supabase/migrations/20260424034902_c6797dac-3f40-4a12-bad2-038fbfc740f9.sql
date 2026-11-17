@@ -1,0 +1,1 @@
+ALTER TABLE public.pro_zone_media ADD COLUMN pro_name text;

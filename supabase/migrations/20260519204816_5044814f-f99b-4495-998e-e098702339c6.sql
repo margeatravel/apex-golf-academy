@@ -1,0 +1,1 @@
+ALTER TABLE public.golf_rounds ADD COLUMN IF NOT EXISTS nine_side TEXT CHECK (nine_side IN ('front','back') OR nine_side IS NULL);

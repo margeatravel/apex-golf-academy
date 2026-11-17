@@ -1,0 +1,2 @@
+ALTER PUBLICATION supabase_realtime ADD TABLE public.fixed_schedule_slots;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.coach_availability_blocks;

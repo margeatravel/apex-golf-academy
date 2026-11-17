@@ -1,0 +1,2 @@
+ALTER TABLE public.videos DROP CONSTRAINT videos_category_check;
+ALTER TABLE public.videos ADD CONSTRAINT videos_category_check CHECK (category = ANY (ARRAY['lesson'::text, 'analysis'::text, 'profile'::text]));

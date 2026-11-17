@@ -1,0 +1,1 @@
+ALTER TABLE public.recurring_lesson_slots ADD COLUMN IF NOT EXISTS no_package_intentional boolean NOT NULL DEFAULT false;

@@ -1,0 +1,2 @@
+ALTER TABLE public.subscriptions ADD COLUMN IF NOT EXISTS archived_at timestamptz NULL;
+CREATE INDEX IF NOT EXISTS idx_subscriptions_archived_at ON public.subscriptions(archived_at) WHERE archived_at IS NOT NULL;

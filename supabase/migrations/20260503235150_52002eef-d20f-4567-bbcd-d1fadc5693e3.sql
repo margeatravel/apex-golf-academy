@@ -1,0 +1,1 @@
+UPDATE notifications SET message = regexp_replace(message, ' \(\[object Object\]\)', '') WHERE message LIKE '%[object Object]%';
