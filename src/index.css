@@ -1,0 +1,771 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Apex Golf Academy — Dark Glassmorphism Design System
+   All colors are HSL. Premium "elite coach" aesthetic.
+*/
+
+@layer base {
+  :root {
+    /* Core palette — dark with warm ivory text */
+    --background: 220 30% 8%;
+    --foreground: 36 45% 93%;
+
+    /* Glass card surfaces */
+    --card: 0 0% 100% / 0.08;
+    --card-foreground: 36 45% 93%;
+
+    --popover: 220 25% 12%;
+    --popover-foreground: 36 45% 93%;
+
+    /* Primary — Forest Green */
+    --primary: 140 25% 40%;
+    --primary-foreground: 36 45% 93%;
+
+    /* Secondary — muted glass */
+    --secondary: 0 0% 100% / 0.06;
+    --secondary-foreground: 36 45% 80%;
+
+    --muted: 0 0% 100% / 0.04;
+    --muted-foreground: 36 45% 93% / 0.6;
+
+    /* Accent — Gold */
+    --accent: 45 86% 60%;
+    --accent-foreground: 220 30% 8%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 36 45% 93%;
+
+    --border: 0 0% 100% / 0.15;
+    --input: 0 0% 100% / 0.10;
+    --ring: 140 25% 40%;
+
+    --radius: 1rem;
+
+    /* Extended Palette */
+    --success: 140 25% 40%;
+    --warning: 45 86% 60%;
+    --info: 210 70% 55%;
+    --lime: 84 85% 55%;
+    --gold: 45 86% 60%;
+
+    /* Status colors */
+    --status-scheduled: 217 80% 60%;
+    --status-completed: 140 25% 40%;
+    --status-cancelled: 0 72% 51%;
+
+    /* Glass variables */
+    --glass-bg: rgba(255, 255, 255, 0.08);
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-blur: blur(20px);
+    --overlay-dark: rgba(0, 0, 0, 0.45);
+
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+    --shadow-glow: 0 0 35px hsla(140, 25%, 40%, 0.3);
+    --shadow-glow-accent: 0 0 30px hsla(45, 86%, 60%, 0.3);
+    --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
+    --shadow-card-hover: 0 12px 36px rgba(0, 0, 0, 0.4);
+    --shadow-logo: 0 8px 32px hsla(140, 25%, 30%, 0.4);
+    --lesson-glass-bg: linear-gradient(145deg, hsl(var(--foreground) / 0.17), hsl(var(--success) / 0.22) 50%, hsl(var(--background) / 0.45));
+    --lesson-glass-border: hsl(var(--foreground) / 0.3);
+    --lesson-glass-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.28), inset 0 -1px 0 hsl(var(--success) / 0.2), 0 8px 24px hsl(var(--background) / 0.22);
+    --lesson-live-glow: 0 0 10px hsl(var(--success) / 0.8);
+    --pro-zone-surface: linear-gradient(145deg, hsl(var(--foreground) / 0.14), hsl(var(--primary) / 0.16) 55%, hsl(var(--background) / 0.5));
+    --pro-zone-edge: hsl(var(--foreground) / 0.24);
+    --pro-zone-shadow: inset 0 1px 0 hsl(var(--foreground) / 0.2), 0 8px 24px hsl(var(--background) / 0.22);
+    --pro-zone-hover-shadow: inset 0 1px 0 hsl(var(--accent) / 0.3), 0 8px 24px hsl(var(--primary) / 0.2);
+
+    /* Transitions */
+    --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html, body {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
+
+  #root {
+    overflow-x: hidden;
+    max-width: 100%;
+    min-height: 100vh;
+  }
+
+  /* ============================================================
+     iOS native text-selection magnifier
+     Ensure inputs, textareas and contenteditable surfaces always
+     allow press-and-hold cursor positioning, selection handles and
+     the native callout, even when nested inside ancestors that
+     (intentionally or via 3rd-party widgets like Radix overlays,
+     scroll areas, sliders) set -webkit-user-select: none or
+     -webkit-touch-callout: none.
+     ============================================================ */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="file"]),
+  textarea,
+  [contenteditable="true"],
+  [contenteditable=""] {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default !important;
+    touch-action: auto;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+    color: #F5F0E8;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+    letter-spacing: -0.025em;
+    color: #F5F0E8;
+  }
+
+  p, span, label, a {
+    color: rgba(245, 240, 232, 0.85);
+  }
+
+  /* ============================================================
+     GLOBAL MOBILE SAFE-AREA RULES
+     Pushes overlays, sheets, drawers, dialogs and fixed top/bottom
+     bars away from the iPhone notch / home indicator.
+     ============================================================ */
+
+  /* Radix overlays (Dialog, Sheet, Drawer/Vaul) */
+  [data-radix-dialog-content],
+  [data-radix-sheet-content],
+  [data-radix-drawer-content],
+  [vaul-drawer] {
+    padding-top: max(env(safe-area-inset-top, 0px), 0px);
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 0px);
+  }
+
+  /* Generic fixed/sticky top bars — opt-in via class */
+  .app-top-bar,
+  header.app-header,
+  nav.app-top-nav {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem);
+  }
+
+  /* Generic fixed/sticky bottom bars + floating action buttons */
+  .app-bottom-bar,
+  nav.app-bottom-nav,
+  .app-fab {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
+  }
+}
+
+@layer components {
+  .pro-zone-tile {
+    background: var(--pro-zone-surface);
+    border: 1px solid var(--pro-zone-edge);
+    box-shadow: var(--pro-zone-shadow);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    transition: border-color 180ms ease, box-shadow 180ms ease;
+  }
+  .pro-zone-tile:hover, .pro-zone-tile:focus-visible {
+    border-color: hsl(var(--accent) / 0.45);
+    box-shadow: var(--pro-zone-hover-shadow);
+  }
+  .pro-zone-tile h3 { letter-spacing: 0; }
+  @media (prefers-reduced-motion: reduce) {
+    .pro-zone-tile { transition: none; }
+  }
+}
+
+/* ============================================================
+   AUTO SAFE-AREA FOR STICKY TOP HEADERS
+   Every sticky top:0 header / nav gets pushed below the iOS
+   status bar / notch so back-arrows and actions stay tappable.
+   ============================================================ */
+@layer utilities {
+  header[class~="sticky"][class~="top-0"],
+  nav[class~="sticky"][class~="top-0"],
+  .glass-header[class~="sticky"][class~="top-0"],
+  div[class~="sticky"][class~="top-0"][class*="z-"] {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 0.75rem) !important;
+  }
+}
+
+@layer utilities {
+  /* ===== SAFE-AREA UTILITIES ===== */
+  .safe-top    { padding-top: env(safe-area-inset-top, 0px); }
+  .safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .safe-left   { padding-left: env(safe-area-inset-left, 0px); }
+  .safe-right  { padding-right: env(safe-area-inset-right, 0px); }
+  .safe-x      { padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px); }
+  .safe-y      { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .mt-safe     { margin-top: env(safe-area-inset-top, 0px); }
+  .mb-safe     { margin-bottom: env(safe-area-inset-bottom, 0px); }
+  .min-h-screen-safe {
+    min-height: calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));
+  }
+
+  /* ===== GLOBAL BACKGROUND ===== */
+  .app-bg {
+    position: relative;
+    min-height: 100vh;
+  }
+
+  .app-bg::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    background-image: url('/images/golf-bg.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    /* No background-attachment: fixed — position: fixed handles it and works on mobile */
+  }
+
+  .app-bg::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  /* Dashboard-only: dark-green overlay so the field photo stays alive */
+  .app-bg-green::after {
+    background: rgba(8, 20, 10, 0.55);
+  }
+
+  /* Tier-based subtle background tints */
+  body[data-tier="free"] .app-bg::after,
+  body[data-tier="member"] .app-bg::after {
+    background: linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03)), rgba(0,0,0,0.45);
+  }
+  body[data-tier="free"] .app-bg-green::after,
+  body[data-tier="member"] .app-bg-green::after {
+    background: linear-gradient(rgba(255,255,255,0.03), rgba(255,255,255,0.03)), rgba(8,20,10,0.55);
+  }
+  body[data-tier="pro"] .app-bg::after {
+    background: linear-gradient(rgba(201,168,76,0.05), rgba(201,168,76,0.05)), rgba(0,0,0,0.45);
+  }
+  body[data-tier="pro"] .app-bg-green::after {
+    background: linear-gradient(rgba(201,168,76,0.05), rgba(201,168,76,0.05)), rgba(8,20,10,0.55);
+  }
+  body[data-tier="apex"] .app-bg::after {
+    background: linear-gradient(rgba(27,79,138,0.06), rgba(27,79,138,0.06)), rgba(0,0,0,0.45);
+  }
+  body[data-tier="apex"] .app-bg-green::after {
+    background: linear-gradient(rgba(27,79,138,0.06), rgba(27,79,138,0.06)), rgba(8,20,10,0.55);
+  }
+
+  /* Tier-based header border-bottom tints */
+  body[data-tier="free"] .glass-header,
+  body[data-tier="member"] .glass-header {
+    border-bottom-color: rgba(255,255,255,0.18);
+  }
+  body[data-tier="pro"] .glass-header {
+    border-bottom-color: rgba(201,168,76,0.40);
+  }
+  body[data-tier="apex"] .glass-header {
+    border-bottom-color: rgba(27,79,138,0.50);
+  }
+
+  /* Auth page only: cinematic blue-hour coastal academy hero with a richer
+     overlay so the right-side login form has a calm dark zone behind it. */
+  .auth-bg {
+    position: relative;
+    min-height: 100vh;
+  }
+  .auth-bg::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    background-image: url('/images/auth-bg.jpg');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+  }
+  .auth-bg::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background:
+      /* Soft warm glow over the subjects on the left */
+      radial-gradient(ellipse at 25% 60%, rgba(74, 124, 89, 0.10), transparent 50%),
+      /* Darken the right side where the desktop login form sits */
+      radial-gradient(ellipse at 100% 50%, rgba(8, 16, 28, 0.65), rgba(8, 16, 28, 0.45) 55%, transparent 80%),
+      rgba(8, 16, 28, 0.45);
+  }
+
+  /* ===== GLASS CARDS ===== */
+  .lesson-glass {
+    background: var(--lesson-glass-bg);
+    border: 1px solid var(--lesson-glass-border);
+    box-shadow: var(--lesson-glass-shadow);
+    backdrop-filter: blur(24px) saturate(145%);
+    -webkit-backdrop-filter: blur(24px) saturate(145%);
+  }
+
+  .lesson-live-dot {
+    box-shadow: var(--lesson-live-glow);
+  }
+
+  .glass-card {
+    background: rgba(14, 22, 32, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    transition: var(--transition-base);
+  }
+
+  .glass-card:hover {
+    background: rgba(14, 22, 32, 0.62);
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  .glass-card-sm {
+    background: rgba(14, 22, 32, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    transition: var(--transition-base);
+  }
+
+  .glass-card-sm:hover {
+    background: rgba(14, 22, 32, 0.62);
+  }
+
+  /* ===== GLASS HEADER ===== */
+  .glass-header {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* ===== TEXT COLORS ===== */
+  .text-ivory {
+    color: #F5F0E8;
+  }
+
+  .text-ivory-muted {
+    color: rgba(245, 240, 232, 0.6);
+  }
+
+  .text-ivory-body {
+    color: rgba(245, 240, 232, 0.85);
+  }
+
+  .text-gold {
+    color: #F0C040;
+  }
+
+  .text-green-accent {
+    color: #4a7c59;
+  }
+
+  /* ===== GLASS PILL TABS ===== */
+  .glass-pill-tabs {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 4px;
+  }
+
+  .glass-pill-tab {
+    border-radius: 10px;
+    color: rgba(245, 240, 232, 0.6);
+    transition: var(--transition-base);
+    font-weight: 500;
+  }
+
+  .glass-pill-tab[data-state=active] {
+    background: #4a7c59;
+    color: #F5F0E8;
+    box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
+  }
+
+  /* ===== GLASS INPUT ===== */
+  .glass-input {
+    background: rgba(255, 255, 255, 0.10) !important;
+    border: 1px solid rgba(255, 255, 255, 0.20) !important;
+    color: #F5F0E8 !important;
+    border-radius: 12px;
+  }
+
+  .glass-input::placeholder {
+    color: rgba(245, 240, 232, 0.4);
+  }
+
+  .glass-input:focus {
+    border-color: #4a7c59 !important;
+    box-shadow: 0 0 0 2px rgba(74, 124, 89, 0.25) !important;
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn-green {
+    background: #4a7c59;
+    color: #F5F0E8;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    transition: var(--transition-base);
+  }
+
+  .btn-green:hover {
+    background: #3d6a4b;
+    box-shadow: 0 4px 16px rgba(74, 124, 89, 0.35);
+  }
+
+  .btn-glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #F5F0E8;
+    border-radius: 12px;
+    font-weight: 500;
+    transition: var(--transition-base);
+  }
+
+  .btn-glass:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.25);
+  }
+
+  /* ===== LEGACY COMPAT — keep old classes working for admin pages ===== */
+  .bg-page-gradient {
+    /* Now uses app-bg instead; still declare as fallback */
+    background: linear-gradient(135deg, #0a1628 0%, #1a3a2a 100%);
+  }
+
+  .card-elevated {
+    background: rgba(14, 22, 32, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    box-shadow: var(--shadow-card);
+    transition: var(--transition-base);
+  }
+
+  .card-elevated:hover {
+    background: rgba(14, 22, 32, 0.62);
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-2px);
+  }
+
+  .card-hover {
+    transition: var(--transition-base);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .card-hover:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .hero-gradient {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+  }
+
+  .glass {
+    background: rgba(14, 22, 32, 0.55);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .icon-container {
+    @apply flex items-center justify-center rounded-xl;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .icon-container-primary {
+    background: #4a7c59;
+    box-shadow: 0 0 20px rgba(74, 124, 89, 0.3);
+  }
+
+  .icon-container-accent {
+    background: #F0C040;
+    box-shadow: 0 0 20px rgba(240, 192, 64, 0.25);
+  }
+
+  .icon-container-warning {
+    background: #F0C040;
+  }
+
+  .icon-container-info {
+    background: linear-gradient(135deg, hsl(210 70% 55%) 0%, hsl(220 65% 50%) 100%);
+  }
+
+  .stat-number {
+    @apply text-4xl font-heading font-bold tracking-tight;
+  }
+
+  .stat-label {
+    @apply text-sm font-medium uppercase tracking-wide;
+    color: rgba(245, 240, 232, 0.6);
+  }
+
+  .section-header {
+    @apply text-lg font-heading font-semibold flex items-center gap-2;
+    color: #F5F0E8;
+  }
+
+  .pattern-dots {
+    background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+
+  .pattern-grid {
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 40px 40px;
+  }
+
+  /* Login Page */
+  .login-gradient {
+    background: linear-gradient(135deg, #0a1628 0%, #1a3a2a 50%, #0d1f18 100%);
+  }
+
+  .login-pattern {
+    background-image:
+      radial-gradient(circle at 20% 30%, rgba(74, 124, 89, 0.15) 0%, transparent 50%),
+      radial-gradient(circle at 80% 70%, rgba(201, 168, 76, 0.1) 0%, transparent 50%),
+      radial-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 24px 24px;
+  }
+
+  .logo-glow {
+    box-shadow: 0 8px 32px rgba(74, 124, 89, 0.4);
+    animation: pulse-glow 3s ease-in-out infinite;
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% {
+      box-shadow: 0 8px 32px rgba(74, 124, 89, 0.35);
+    }
+    50% {
+      box-shadow: 0 8px 40px rgba(74, 124, 89, 0.5);
+    }
+  }
+
+  @keyframes subtle-pulse {
+    0%, 100% {
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    50% {
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.4);
+    }
+  }
+
+  .pb-mobile-safe {
+    padding-bottom: 10rem;
+  }
+
+  @media (min-width: 1024px) {
+    .pb-mobile-safe {
+      padding-bottom: 0;
+    }
+  }
+
+  .break-anywhere {
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Slim themed scrollbar for /auth marketing column */
+  .auth-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(245, 240, 232, 0.18) transparent;
+  }
+  .auth-scroll::-webkit-scrollbar {
+    width: 6px;
+  }
+  .auth-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .auth-scroll::-webkit-scrollbar-thumb {
+    background-color: rgba(245, 240, 232, 0.18);
+    border-radius: 999px;
+  }
+  .auth-scroll::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(245, 240, 232, 0.32);
+  }
+
+  /* Gold section header */
+  .section-header-gold {
+    color: #F0C040;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  /* Text gradient for gold */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #4a7c59, #6da67a);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-accent {
+    background: linear-gradient(135deg, #F0C040, #F5D060);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .text-gradient-warm {
+    background: linear-gradient(135deg, #F0C040, #D4A830);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
+
+/* ── Guided Tour (driver.js) — themed to glassmorphism ── */
+.sc-tour-popover.driver-popover {
+  background: rgba(20, 30, 25, 0.96) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(240, 192, 64, 0.25);
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #F5F0E8;
+  max-width: 320px;
+  padding: 18px;
+}
+.sc-tour-popover .driver-popover-title {
+  color: #F5F0E8;
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+.sc-tour-popover .driver-popover-description {
+  color: rgba(245, 240, 232, 0.75);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.sc-tour-popover .driver-popover-footer {
+  margin-top: 14px;
+  gap: 8px;
+}
+.sc-tour-popover .driver-popover-progress-text {
+  color: rgba(245, 240, 232, 0.45);
+  font-size: 11px;
+}
+.sc-tour-popover .driver-popover-next-btn,
+.sc-tour-popover .driver-popover-prev-btn,
+.sc-tour-popover .driver-popover-close-btn {
+  background: #F0C040 !important;
+  color: #1a2b1a !important;
+  border: none !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+  font-size: 12px !important;
+  padding: 8px 14px !important;
+  text-shadow: none !important;
+}
+.sc-tour-popover .driver-popover-prev-btn {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #F5F0E8 !important;
+}
+.sc-tour-popover .driver-popover-close-btn {
+  background: transparent !important;
+  color: rgba(245, 240, 232, 0.5) !important;
+  padding: 4px 8px !important;
+}
+.sc-tour-popover .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: rgba(20, 30, 25, 0.96);
+}
+.sc-tour-popover .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: rgba(20, 30, 25, 0.96);
+}
+.sc-tour-popover .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: rgba(20, 30, 25, 0.96);
+}
+.sc-tour-popover .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: rgba(20, 30, 25, 0.96);
+}
+
+/* Mobile tweaks — keep the popover comfortably inside the viewport and
+   make sure tap targets stay large enough on small screens. */
+@media (max-width: 640px) {
+  .sc-tour-popover.driver-popover {
+    max-width: calc(100vw - 24px) !important;
+    width: calc(100vw - 24px);
+    padding: 16px;
+  }
+  .sc-tour-popover .driver-popover-title {
+    font-size: 15px;
+  }
+  .sc-tour-popover .driver-popover-description {
+    font-size: 13px;
+  }
+  .sc-tour-popover .driver-popover-next-btn,
+  .sc-tour-popover .driver-popover-prev-btn {
+    padding: 10px 14px !important;
+    font-size: 13px !important;
+  }
+}
+
+/* ─────────────── Student desktop shell (lg+ only) ───────────────
+   The floating bottom pill is replaced by a fixed 240px left sidebar.
+   Below 1024px nothing changes. */
+@media (min-width: 1024px) {
+  body.student-desktop-nav {
+    padding-left: 240px;
+  }
+  body.student-desktop-nav main {
+    max-width: 1280px !important;
+  }
+}
+
+input[type="date"], input[type="datetime-local"], input[type="month"] { color-scheme: dark; }

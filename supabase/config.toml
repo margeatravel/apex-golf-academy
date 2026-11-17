@@ -1,0 +1,50 @@
+project_id = "rlynhhrriskauwvfczkx"
+
+[functions]
+  [functions.ai-golf-coach]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.award-referral]
+    verify_jwt = true
+  [functions.check-subscription]
+    verify_jwt = false
+  [functions.create-checkout]
+    verify_jwt = false
+  [functions.create-student]
+    verify_jwt = false
+  [functions.customer-portal]
+    verify_jwt = false
+  [functions.fetch-calendar-events]
+    verify_jwt = true
+  [functions.notify-admin]
+    verify_jwt = false
+  [functions.manage-my-subscription]
+    verify_jwt = true
+  [functions.redeem-reward]
+    verify_jwt = true
+  [functions.send-notification-email]
+    verify_jwt = false
+  [functions.stripe-webhook]
+    verify_jwt = false
+  [functions.sync-google-calendar]
+    verify_jwt = false
+  [functions.video-share]
+    verify_jwt = false
+  [functions.sign-shared-video]
+    verify_jwt = false
+  [functions.send-daily-lesson-reminders]
+    verify_jwt = false
+  [functions.send-package-completed-email]
+    verify_jwt = false
+
+[functions.coach-signup]
+  verify_jwt = false
+  [functions.send-family-invite]
+    verify_jwt = true
+
+[functions.create-managed-family-member]
+  verify_jwt = true
+
+[functions.update-managed-family-member]
+  verify_jwt = true
