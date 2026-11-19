@@ -91,12 +91,15 @@ serve(async (req) => {
     // Existing lessons within range (any student). Used both to detect
     // which times are already taken AND to detect which weeks are skipped
     // (a skipped fixed-schedule slot reopens that single week).
+    // NOTE: cancelled rows are fetched too — the admin "cancel this week"
+    // flow marks the lesson cancelled AND skipped (open), which frees the
+    // week exactly like a skip. The taken-loop below ignores cancelled
+    // rows, and only skipped+open rows count as freed.
     const { data: lessons = [] } = await supabase
       .from("lessons")
-      .select("lesson_date, lesson_time, duration_minutes, lesson_type, status, skipped, skip_keep_closed")
+      .select("lesson_date, lesson_time, duration_minutes, lesson_type, status, skipped, skip_keep_closed, recurring_slot_id")
       .gte("lesson_date", startDate)
-      .lte("lesson_date", endDate)
-      .neq("status", "cancelled");
+      .lte("lesson_date", endDate);
 
     // Slots are sourced EXCLUSIVELY from fixed_schedule_slots (the coach's
     // calendar of "open spots" + claimed fixed-schedule spots). A slot is
@@ -136,14 +139,34 @@ serve(async (req) => {
     // which is exactly what the Master Calendar projects via useCalendarWeek.
     const { data: recurringSlots = [] } = await supabase
       .from("recurring_lesson_slots")
-      .select("weekday, start_time, duration_minutes, lesson_type, is_active, paused_until")
+      .select("id, weekday, start_time, duration_minutes, lesson_type, is_active, paused_until")
       .eq("is_active", true);
 
-    // ── Build "taken" set: any non-cancelled lesson occupies its (date, time)
-    // for its FULL duration — including skipped ones, since the coach
-    // calendar still shows that hour as belonging to a student. A 2-hour
-    // lesson (Campo / Playing Lesson / Field Lesson) at 17:00 blocks both
-    // 17:00 AND 18:00 open spots, not just the exact start time.
+    // Weeks the coach freed: a lesson skipped for that week (or cancelled
+    // by the admin, which also marks it skipped) with skip_keep_closed=false.
+    // Those (date, time) pairs are bookable again — see (b) below — and must
+    // not count as taken. A skipped week kept closed stays blocked.
+    const freedByDate = new Map<string, Set<string>>();
+    const freedRecurringByDate = new Map<string, Set<string>>();
+    for (const l of lessons || []) {
+      if ((l as any).skipped !== true || (l as any).skip_keep_closed === true) continue;
+      if (!l.lesson_date || !l.lesson_time) continue;
+      const d = l.lesson_date as string;
+      const t = (l.lesson_time as string).slice(0, 5);
+      if (!freedByDate.has(d)) freedByDate.set(d, new Set());
+      freedByDate.get(d)!.add(t);
+      const rsid = (l as any).recurring_slot_id as string | null | undefined;
+      if (rsid) {
+        if (!freedRecurringByDate.has(d)) freedRecurringByDate.set(d, new Set());
+        freedRecurringByDate.get(d)!.add(rsid);
+      }
+    }
+
+    // ── Build "taken" set: any non-cancelled, non-freed lesson occupies its
+    // (date, time) for its FULL duration. A 2-hour lesson (Campo / Playing
+    // Lesson / Field Lesson) at 17:00 blocks both 17:00 AND 18:00 open spots,
+    // not just the exact start time. Freed weeks (skipped, or cancelled by
+    // the admin, with skip_keep_closed=false) occupy nothing.
     const takenSet = new Set<string>();
     // Per-date taken intervals in minutes: [startMin, endMin)
     const takenIntervals = new Map<string, Array<[number, number]>>();
@@ -155,6 +178,9 @@ serve(async (req) => {
     for (const l of lessons || []) {
       if (!l.lesson_date || !l.lesson_time) continue;
       const t = (l.lesson_time as string).slice(0, 5);
+      // A freed week occupies nothing; a cancelled lesson is gone either way.
+      if (freedByDate.get(l.lesson_date as string)?.has(t)) continue;
+      if ((l as any).status === 'cancelled') continue;
       takenSet.add(`${l.lesson_date}|${t}`);
       const sMin = timeToMinutes(l.lesson_time as string);
       const eMin = sMin + lessonOccupiedMinutes(l);
@@ -202,10 +228,12 @@ serve(async (req) => {
       const slots: string[] = [];
 
       // Recurring weekly slots projected onto this date occupy their window,
-      // mirroring the coach calendar's `fixed` tiles.
+      // mirroring the coach calendar's `fixed` tiles — except a slot whose
+      // week the coach freed, which must not block its own time.
       const recurringIntervals: Array<[number, number]> = (recurringSlots || [])
         .filter((r: any) => r.weekday === wd &&
-          !(r.paused_until && cursor < String(r.paused_until).slice(0, 10)))
+          !(r.paused_until && cursor < String(r.paused_until).slice(0, 10)) &&
+          !freedRecurringByDate.get(cursor)?.has((r as any).id))
         .map((r: any) => {
           const sMin = timeToMinutes(r.start_time as string);
           const dur = longLessonTypes.has((r.lesson_type as string) ?? "")
@@ -219,11 +247,15 @@ serve(async (req) => {
         const sMin = timeToMinutes((r as any).start_time as string);
         const eMin = sMin + ((r as any).duration_minutes ?? duration);
 
-        // Only genuinely unclaimed open spots are offered. A slot that has a
-        // lesson assigned (including skipped occurrences) is never offered.
+        // (a) Genuinely unclaimed open spots are offered.
         const isUnclaimedOpenSpot =
           (r as any).student_id == null && (r as any).is_available === true;
-        if (!isUnclaimedOpenSpot) continue;
+        // (b) A claimed spot whose owner skipped this week (and left it open)
+        // is offered for this date only.
+        const isFreedBySkip =
+          (r as any).student_id != null &&
+          !!freedByDate.get(cursor)?.has(startTime);
+        if (!isUnclaimedOpenSpot && !isFreedBySkip) continue;
 
         // Already taken by another lesson overlapping this slot's window?
         const dayTaken = takenIntervals.get(cursor) ?? [];

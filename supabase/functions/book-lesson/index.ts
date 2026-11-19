@@ -217,12 +217,15 @@ serve(async (req) => {
       // Allow if any lesson on this exact date+time is marked as skipped
       // (and not kept closed) — this is the coach's manual "open this week"
       // adjustment and may exist independently of fixed_schedule_slots.
+      // NOTE: do NOT exclude cancelled rows here — the admin "cancel this
+      // week" flow marks the lesson cancelled AND skipped (open), which is
+      // exactly a freed week; excluding it made cancelled weeks unbookable
+      // (409 "unavailable") even though the calendar shows them as open.
       const { data: weekLessons = [] } = await admin
         .from("lessons")
         .select("id, lesson_time, skipped, skip_keep_closed, status, coach_id")
         .eq("lesson_date", lessonDate)
-        .eq("skipped", true)
-        .neq("status", "cancelled");
+        .eq("skipped", true);
       allowed = (weekLessons || []).some(
         (l: any) =>
           ((l.lesson_time as string) || "").slice(0, 5) === requestedTime &&
