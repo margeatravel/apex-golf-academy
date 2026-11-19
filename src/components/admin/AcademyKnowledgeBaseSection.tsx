@@ -179,7 +179,7 @@ export function AcademyKnowledgeBaseSection() {
           <div>
             <h3 style={{ color: "#F5F0E8", fontSize: 16, fontWeight: 600 }}>Academy Knowledge Base</h3>
             <p style={{ color: "#E8D5B0", opacity: 0.5, fontSize: 12 }}>
-              The Apex AI uses these entries to answer academy questions. Missing info = AI will tell the student to contact the coach.
+              The Margea AI uses these entries to answer academy questions. Missing info = AI will tell the student to contact the coach.
             </p>
           </div>
         </div>

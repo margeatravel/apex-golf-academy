@@ -1200,9 +1200,9 @@ export default function StudentDashboard() {
           {/* ── RIGHT COLUMN (lg+) ── */}
           <div className="contents lg:block lg:space-y-4">
 
-        {/* ── APEX AI + MANAGE PLAN (side-by-side) ── */}
+        {/* ── MARGEA AI + MANAGE PLAN (side-by-side) ── */}
         <div className="order-4 lg:order-none grid grid-cols-2 lg:grid-cols-1 gap-3">
-          {/* Always visible: paid users enter Apex AI; free users are sent to /plans by the ai-coach gate */}
+          {/* Always visible: paid users enter Margea AI; free users are sent to /plans by the ai-coach gate */}
           <Link
             to="/ai-coach"
             style={glassStyle}

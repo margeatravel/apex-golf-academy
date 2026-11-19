@@ -277,7 +277,7 @@ export function RevenueProjectionChart() {
         extras,
       });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = `apex-${es ? 'reporte-ingresos' : 'revenue-report'}-${today}.pdf`;
+      const a = document.createElement('a'); a.href = url; a.download = `margea-${es ? 'reporte-ingresos' : 'revenue-report'}-${today}.pdf`;
       document.body.appendChild(a); a.click(); a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 30_000);
       toast.success(es ? 'PDF descargado' : 'PDF downloaded', { id: tid });

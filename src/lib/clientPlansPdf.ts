@@ -105,9 +105,9 @@ export async function createClientPlansPdf(): Promise<Blob> {
     doc.setFillColor(...palette.reflection); doc.circle(40, height - 80, 180, 'F');
     doc.setGState(doc.GState({ opacity: 1 }));
     setFont('bold'); doc.setFontSize(27); doc.setTextColor(...palette.gold);
-    doc.text('APEX', margin, 48);
+    doc.text('MARGEA', margin, 48);
     setFont('normal'); doc.setFontSize(8); doc.setTextColor(...palette.muted);
-    doc.text('GOLF ACADEMY', margin + 91, 47);
+    doc.text('GOLF ACADEMY', margin + 132, 47);
     doc.setFontSize(18); doc.setTextColor(...palette.ivory); doc.text(section, margin, 82);
     doc.setDrawColor(...palette.edge); doc.setLineWidth(0.5); doc.line(margin, 96, width - margin, 96);
     doc.setFontSize(8); doc.setTextColor(...palette.muted);
@@ -215,7 +215,7 @@ export async function deliverClientPlansPdf(blob: Blob) {
   const filename = 'Apex-Planes-para-clientes.pdf';
   const file = new File([blob], filename, { type: 'application/pdf' });
   if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
-    try { await navigator.share({ files: [file], title: 'Planes Apex' }); return; }
+    try { await navigator.share({ files: [file], title: 'Planes Margea Golf Academy' }); return; }
     catch (error) { if ((error as DOMException).name === 'AbortError') return; }
   }
   const url = URL.createObjectURL(blob);

@@ -12,7 +12,7 @@ import {
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const APP_URL = "https://golfproconnect.lovable.app";
-const FROM = "SC Golf Academy <admin@margeagolfacademy.com>";
+const FROM = "Margea Golf Academy <admin@margeagolfacademy.com>";
 const REPLY_TO = "admin@margeagolfacademy.com";
 
 const corsHeaders = {
@@ -102,7 +102,7 @@ function brandedEmail(opts: BrandedEmailOpts): string {
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1.0" />
-<title>SC Golf Academy</title>
+<title>Margea Golf Academy</title>
 </head>
 <body style="margin:0;padding:0;background-color:#0e2410;font-family:Arial,Helvetica,sans-serif;color:#f5f0e8;">
 ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:#0e2410;">${escapeHtml(preheader)}</div>` : ""}
@@ -111,7 +111,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
     <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background-color:#1a2e1c;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
       <!-- Header -->
       <tr><td style="background:linear-gradient(135deg,#1a3a1c 0%,#0d2410 100%);padding:34px 32px;text-align:center;border-bottom:1px solid rgba(239,159,39,0.25);">
-        <p style="margin:0;color:#EF9F27;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SC Golf Academy</p>
+        <p style="margin:0;color:#EF9F27;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Margea Golf Academy</p>
         <h1 style="margin:6px 0 0;color:#ffffff;font-size:24px;font-weight:700;letter-spacing:-.3px;">⛳ Elevate Your Game</h1>
       </td></tr>
 
@@ -138,9 +138,9 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
       <!-- Footer -->
       <tr><td style="background:#0d2410;padding:22px 32px;text-align:center;border-top:1px solid rgba(239,159,39,0.18);">
         <p style="margin:0;color:rgba(245,240,232,0.55);font-size:12px;line-height:1.6;">
-          SC Golf Academy · <a href="mailto:admin@margeagolfacademy.com" style="color:#EF9F27;text-decoration:none;">admin@margeagolfacademy.com</a>
+          Margea Golf Academy · <a href="mailto:admin@margeagolfacademy.com" style="color:#EF9F27;text-decoration:none;">admin@margeagolfacademy.com</a>
         </p>
-        <p style="margin:6px 0 0;color:rgba(245,240,232,0.35);font-size:11px;">© ${new Date().getFullYear()} SC Golf Academy</p>
+        <p style="margin:6px 0 0;color:rgba(245,240,232,0.35);font-size:11px;">© ${new Date().getFullYear()} Margea Golf Academy</p>
       </td></tr>
     </table>
   </td></tr>
@@ -168,8 +168,8 @@ const bigStat = (label: string, value: string, sub = "") => `
 const welcomeEmail = (lang: Lang, name: string) =>
   brandedEmail({
     preheader: lang === "es"
-      ? "Bienvenido a SC Golf Academy — vamos a elevar tu juego."
-      : "Welcome to SC Golf Academy — let's elevate your game.",
+      ? "Bienvenido a Margea Golf Academy — vamos a elevar tu juego."
+      : "Welcome to Margea Golf Academy — let's elevate your game.",
     icon: "🏌️",
     title: t(lang, "welcome_title"),
     subtitle: t(lang, "welcome_subtitle"),
@@ -281,7 +281,7 @@ const subscriptionConfirmedEmail = (lang: Lang, name: string, planLabel: string,
     preheader: lang === "es" ? `Tu membresía ${planTitle} está activa` : `Your ${planTitle} membership is active`,
     icon: isPro ? "👑" : "🎉",
     title: lang === "es" ? `¡Tu membresía ${planTitle} está activa!` : `Your ${planTitle} membership is active!`,
-    subtitle: lang === "es" ? `Bienvenido al nivel ${planTitle} de SC Golf Academy` : `Welcome to the SC Golf Academy ${planTitle} tier`,
+    subtitle: lang === "es" ? `Bienvenido al nivel ${planTitle} de Margea Golf Academy` : `Welcome to the Margea Golf Academy ${planTitle} tier`,
     greeting: lang === "es" ? `Hola ${name},` : `Hi ${name},`,
     intro: `${t(lang, "sub_intro_pre")} <strong style="color:#EF9F27;">${planTitle}</strong> ${t(lang, "sub_intro_post")}`,
     detailsHtml: details,
@@ -400,7 +400,7 @@ function buildLessonIcs(opts: {
   // update/cancel emails can replace this event in the user's calendar.
   const uid = `apex-lesson-${opts.lessonDate}-${time.replace(/:/g, "")}@margeagolfacademy.com`;
   const typeSuffix = opts.lessonType ? ` (${opts.lessonType})` : "";
-  const summary = `Lesson with your Coach · Apex Golf Academy${typeSuffix}`;
+  const summary = `Lesson with your Coach · Margea Golf Academy${typeSuffix}`;
   const description =
     `Lesson type: ${opts.lessonType ?? "Lesson"}\\n` +
     `Duration: ${opts.durationMinutes} minutes\\n\\n` +
@@ -408,7 +408,7 @@ function buildLessonIcs(opts: {
   const lines = [
     "BEGIN:VCALENDAR",
     "VERSION:2.0",
-    "PRODID:-//Apex Golf Academy//Lesson Booking//EN",
+    "PRODID:-//Margea Golf Academy//Lesson Booking//EN",
     "CALSCALE:GREGORIAN",
     "METHOD:PUBLISH",
     "BEGIN:VEVENT",
@@ -418,7 +418,7 @@ function buildLessonIcs(opts: {
     `DTEND:${dtEnd}`,
     `SUMMARY:${escIcs(summary)}`,
     `DESCRIPTION:${escIcs(description)}`,
-    `LOCATION:${escIcs("Apex Golf Academy")}`,
+    `LOCATION:${escIcs("Margea Golf Academy")}`,
     "STATUS:CONFIRMED",
     "TRANSP:OPAQUE",
     "BEGIN:VALARM",

@@ -15,7 +15,7 @@ const corsHeaders = {
 }
 
 // Configuration
-const SITE_NAME = "SC golf academy"
+const SITE_NAME = "Margea Golf Academy"
 const SENDER_DOMAIN = "notify.margeagolfacademy.com"
 const ROOT_DOMAIN = "margeagolfacademy.com"
 const FROM_DOMAIN = "margeagolfacademy.com"

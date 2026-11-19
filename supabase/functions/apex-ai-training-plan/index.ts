@@ -1,4 +1,4 @@
-// Apex AI Custom Training Plan generator
+// Margea AI Custom Training Plan generator
 // Gated to active subscribers (Scratch / Pro / Apex / SC included).
 // Generates a structured training plan via Lovable AI Gateway and persists it to ai_training_plans.
 
@@ -20,7 +20,7 @@ function jsonResp(body: unknown, status = 200) {
   });
 }
 
-const SYSTEM_PROMPT = `You are Apex AI, a senior golf coach generating a structured CUSTOM TRAINING PLAN for a real student.
+const SYSTEM_PROMPT = `You are Margea AI, a senior golf coach generating a structured CUSTOM TRAINING PLAN for a real student.
 
 Rules:
 - Use the STUDENT CONTEXT block. Use the "Player level" line EXACTLY as given; never invent a level, handicap or score. If the level is UNKNOWN, build a general intermediate plan and say so in one short line.
@@ -143,7 +143,7 @@ Deno.serve(async (req) => {
 
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Apex AI gate: per-plan `apex_ai_enabled` flag on billing_plans.
+    // Margea AI gate: per-plan `apex_ai_enabled` flag on billing_plans.
     const { data: gateRow, error: gateErr } = await adminClient.rpc("has_apex_ai_access", {
       _user_id: userId,
     });

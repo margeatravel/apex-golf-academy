@@ -1,4 +1,4 @@
-// Apex AI Availability + Booking
+// Margea AI Availability + Booking
 // Action 'list' → returns the next N available fixed_schedule_slots for the next 14 days.
 // Action 'book' → creates a lesson on a specific slot for the authenticated student,
 // deducting from an active package if available, otherwise returning a Stripe checkout URL.

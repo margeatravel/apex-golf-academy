@@ -11,7 +11,7 @@ const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const SENDER_DOMAIN = "margeagolfacademy.com";
-const FROM_ADDRESS = "SC Golf Academy <admin@margeagolfacademy.com>";
+const FROM_ADDRESS = "Margea Golf Academy <admin@margeagolfacademy.com>";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {

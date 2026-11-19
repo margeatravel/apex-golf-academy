@@ -7,7 +7,7 @@ const corsHeaders = {
 
 const APP_URL = "https://margeagolfacademy.com";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM = "SC Golf Academy <admin@margeagolfacademy.com>";
+const FROM = "Margea Golf Academy <admin@margeagolfacademy.com>";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -31,14 +31,14 @@ function escapeHtml(s: string) {
 
 function buildEmailHtml(inviterName: string, inviteUrl: string, isCoach: boolean) {
   const intro = isCoach
-    ? `<strong>${escapeHtml(inviterName)}</strong>, your Coach at SC Golf Academy, has invited you to join the app.`
-    : `<strong>${escapeHtml(inviterName)}</strong> invited you to join SC Golf Academy.`;
+    ? `<strong>${escapeHtml(inviterName)}</strong>, your Coach at Margea Golf Academy, has invited you to join the app.`
+    : `<strong>${escapeHtml(inviterName)}</strong> invited you to join Margea Golf Academy.`;
   return `<!doctype html>
 <html><body style="margin:0;padding:0;background:#f5f3ee;font-family:Arial,Helvetica,sans-serif;color:#0e2410;">
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f3ee;padding:32px 0;">
     <tr><td align="center">
       <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:32px;">
-        <tr><td style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#4a7c59;font-weight:700;">SC Golf Academy</td></tr>
+        <tr><td style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#4a7c59;font-weight:700;">Margea Golf Academy</td></tr>
         <tr><td style="padding-top:8px;font-size:24px;font-weight:700;color:#0e2410;">You've been invited ⛳</td></tr>
         <tr><td style="padding-top:16px;font-size:15px;line-height:1.5;color:#3a3a3a;">${intro}</td></tr>
         <tr><td style="padding-top:8px;font-size:14px;line-height:1.5;color:#5a5a5a;">Track your progress, book lessons, watch swing videos, and access pro tips — all in one place.</td></tr>
@@ -274,8 +274,8 @@ Deno.serve(async (req) => {
 
       const html = buildEmailHtml(inviterName, inviteUrl, inviterIsCoach);
       const subject = inviterIsCoach
-        ? `Your coach ${inviterName} invited you to SC Golf Academy`
-        : `${inviterName} invited you to SC Golf Academy`;
+        ? `Your coach ${inviterName} invited you to Margea Golf Academy`
+        : `${inviterName} invited you to Margea Golf Academy`;
 
       try {
         const r = await fetch("https://api.resend.com/emails", {

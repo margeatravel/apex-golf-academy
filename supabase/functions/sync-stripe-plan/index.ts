@@ -64,14 +64,14 @@ serve(async (req) => {
       if (stripeProductId) {
         logStep("Updating existing Stripe product", { stripeProductId });
         await stripe.products.update(stripeProductId, {
-          name: `SC Golf Academy — ${plan.name}`,
+          name: `Margea Golf Academy — ${plan.name}`,
           description: plan.description || undefined,
           active: plan.is_active,
         });
       } else {
         logStep("Creating new Stripe product");
         const product = await stripe.products.create({
-          name: `SC Golf Academy — ${plan.name}`,
+          name: `Margea Golf Academy — ${plan.name}`,
           description: plan.description || undefined,
           metadata: { billing_plan_id: plan.id },
         });

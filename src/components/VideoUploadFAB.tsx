@@ -1051,7 +1051,7 @@ export function VideoUploadFAB() {
         </DialogContent>
       </Dialog>
 
-      {/* Apex AI chat modal */}
+      {/* Margea AI chat modal */}
       <AiCoachChatModal open={aiCoachOpen} onOpenChange={setAiCoachOpen} />
     </>
   );

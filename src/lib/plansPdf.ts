@@ -24,7 +24,7 @@ export async function downloadPlansPdf() {
   const bg = () => { doc.setFillColor(...GREEN); doc.rect(0, 0, W, H, 'F'); };
   bg();
   doc.setTextColor(...GOLD); doc.setFont('helvetica', 'bold'); doc.setFontSize(24);
-  doc.text('Apex Golf Academy', M, 60);
+  doc.text('Margea Golf Academy', M, 60);
   doc.setTextColor(...IVORY); doc.setFontSize(13); doc.setFont('helvetica', 'normal');
   doc.text('Planes, precios y beneficios', M, 82);
   doc.setDrawColor(...GOLD); doc.line(M, 94, W - M, 94);

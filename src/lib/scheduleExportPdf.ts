@@ -17,7 +17,7 @@ export interface PdfTable {
   footer?: string;
 }
 
-/** Simple dark Apex-styled table PDF. */
+/** Simple dark Margea-styled table PDF. */
 export function buildTablePdf(t: PdfTable): Blob {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   const W = 210, H = 297, M = 14;
@@ -25,7 +25,7 @@ export function buildTablePdf(t: PdfTable): Blob {
   const header = () => {
     paintBg();
     doc.setTextColor(...GOLD); doc.setFont('helvetica', 'bold'); doc.setFontSize(18);
-    doc.text('APEX', M, 18);
+    doc.text('MARGEA', M, 18);
     doc.setTextColor(...IVORY); doc.setFontSize(14);
     doc.text(clean(t.title), M, 27);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(...MUTED);

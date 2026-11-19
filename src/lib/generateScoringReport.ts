@@ -216,7 +216,7 @@ export function generateScoringReport({
 
   doc.setFontSize(10);
   doc.setTextColor(255, 255, 255);
-  doc.text('Apex Golf Academy', MARGIN + 36, 31);
+  doc.text('Margea Golf Academy', MARGIN + 36, 31);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(235, 235, 235);
@@ -818,7 +818,7 @@ export function generateScoringReport({
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(150, 150, 150);
-    doc.text('Apex Golf Academy   ·   margeagolfacademy.com', MARGIN, H - 20);
+    doc.text('Margea Golf Academy   ·   margeagolfacademy.com', MARGIN, H - 20);
     doc.text(`Page ${p} of ${pageCount}`, W - MARGIN, H - 20, { align: 'right' });
   }
 

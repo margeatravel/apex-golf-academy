@@ -249,7 +249,7 @@ export default function StudentAiCoach() {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <Sparkles className="h-5 w-5" style={{ color: "#F0C040" }} />
-          <span className="font-semibold text-[#F5F0E8]">Apex AI</span>
+          <span className="font-semibold text-[#F5F0E8]">Margea AI</span>
         </div>
         <button
           onClick={() => navigate("/dashboard")}
@@ -327,7 +327,7 @@ export default function StudentAiCoach() {
                   </div>
                   <div className="flex flex-col gap-1 max-w-[85%]">
                     <span className="text-[10px] uppercase tracking-wider text-[#F5F0E8]/55 px-1">
-                      Apex AI
+                      Margea AI
                     </span>
                     <div
                       className="rounded-2xl rounded-tl-md px-4 py-3 text-sm flex items-center gap-2"
@@ -358,7 +358,7 @@ export default function StudentAiCoach() {
                 </div>
                 <div className="flex flex-col gap-1 min-w-0 flex-1">
                   <span className="text-[10px] uppercase tracking-wider text-[#F5F0E8]/55 px-1">
-                    Apex AI
+                    Margea AI
                   </span>
                   {m.role === "assistant" ? (
                     <AiCoachResponseCard session={m.session} />

@@ -140,7 +140,7 @@ export function isTrialExpired(trialEndsAt?: string | null): boolean {
   return d <= new Date();
 }
 
-// Apex AI access. The per-plan flag lives in billing_plans.apex_ai_enabled
+// Margea AI access. The per-plan flag lives in billing_plans.apex_ai_enabled
 // (single source of truth, same column the server-side has_apex_ai_access reads).
 // This module-level cache is refreshed by AuthProvider on mount.
 let APEX_AI_TIERS: string[] = ['scratch', 'pro', 'apex'];
@@ -310,7 +310,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const effectivePlan: 'free' | 'member' | 'scratch' | 'pro' | 'apex' | 'family' =
     isAdminPreview ? previewTier : baseEffectivePlan;
 
-  // Refresh the Pro Zone / Apex AI tier caches from billing_plans (admin toggle applies live).
+  // Refresh the Pro Zone / Margea AI tier caches from billing_plans (admin toggle applies live).
   const [, setPlanTiersVersion] = useState(0);
   useEffect(() => {
     if (!user) return;

@@ -16,7 +16,7 @@ interface ProtectedRouteProps {
    * Additive override for routes that are normally student-only (requireStudent)
    * but should also let staff/coach accounts with this granted scope through.
    * Example: /pro-zone and /ai-coach allow staff with the 'pro_zone' access area
-   * to use the consumer-facing Pro Zone / Apex AI features.
+   * to use the consumer-facing Pro Zone / Margea AI features.
    */
   allowStaffPermission?: string;
 }
@@ -69,7 +69,7 @@ export function ProtectedRoute({ children, requireAdmin = false, requireStudent 
     }
     if (role === 'admin' && previewTier) return <>{children}</>;
     // Additive: staff/coach with the granted scope may use this student-facing
-    // route (e.g. Pro Zone / Apex AI for staff with 'pro_zone' access area).
+    // route (e.g. Pro Zone / Margea AI for staff with 'pro_zone' access area).
     if (allowStaffPermission && (role === 'admin' || role === 'coach' || isStaffView) && hasPermission(allowStaffPermission)) {
       return <>{children}</>;
     }

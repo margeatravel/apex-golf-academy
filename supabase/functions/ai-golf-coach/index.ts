@@ -30,7 +30,7 @@ const COACHING_INTENTS = new Set([
 
 // ============================================================================
 // PLATFORM_CONTEXT
-// Comprehensive, evergreen description of every feature in the SC Golf Academy
+// Comprehensive, evergreen description of every feature in the Margea Golf Academy
 // app. Injected into BOTH the router and coach system prompts so the AI can
 // confidently answer any student question about how the app works, even when
 // phrased indirectly. Keep in sync with product changes. Anything that changes
@@ -39,10 +39,10 @@ const COACHING_INTENTS = new Set([
 // overrides this on conflict.
 // ============================================================================
 const PLATFORM_CONTEXT = `
-SC GOLF ACADEMY — PLATFORM KNOWLEDGE BASE
+MARGEA GOLF ACADEMY — PLATFORM KNOWLEDGE BASE
 
 Brand & basics
-- App name: SC Golf Academy (also called "Apex Golf"). The in-app AI assistant is branded "Apex AI".
+- App name: Margea Golf Academy. The in-app AI assistant is branded "Margea AI".
 - Web app for a private golf academy: one head coach (Santi) plus support staff, and their students.
 - Languages: English and Spanish (toggle in the side menu / profile area).
 - Timezone for all lessons and schedules: America/Cancun (UTC-5).
@@ -62,7 +62,7 @@ Membership tiers (Academy Memberships)
 - Three tiers, repositioned as "Member / Scratch / Pro":
   • Member — Free. Basic dashboard, see lessons, upload swing videos (with limits), buy individual lessons or packages.
   • Scratch — Mid tier (monthly). Adds Pro Zone access and more frequent perks.
-  • Pro — Top tier (monthly). Includes Pro Zone, Apex AI premium use, included video analyses, priority booking, and the best per-lesson value. The Pro plan card shows a dynamic "Value: $X – $Y MXN" range estimating savings.
+  • Pro — Top tier (monthly). Includes Pro Zone, Margea AI premium use, included video analyses, priority booking, and the best per-lesson value. The Pro plan card shows a dynamic "Value: $X – $Y MXN" range estimating savings.
 - Plan management: students see their current plan as a pill on the dashboard and a card on their profile. "Manage Plan" opens the Stripe customer portal in the same tab so the student can upgrade, downgrade, change payment method, or cancel. Cancellations stay active until the end of the paid period.
 - Manual plan overrides: a coach can override a student's tier (e.g. comp them Pro for a month). Overrides can have an expiration date.
 - "Pending plan" appears when a student selected a plan but hasn't completed checkout yet.
@@ -117,8 +117,8 @@ Paid Video Analysis (single-video professional review)
 - Students with enough SC Points can redeem a free Video Analysis (200 SC Points = 1 free analysis). When a comped credit is available, the upload flow swaps the Stripe checkout for "Upload & Use Free Credit".
 - Status flow: pending payment → paid → in review → delivered. The coach delivers feedback inside the app.
 
-Apex AI (in-app AI coaching assistant)
-- The "Apex AI" button on the dashboard opens a floating chat where students can:
+Margea AI (in-app AI coaching assistant)
+- The "Margea AI" button on the dashboard opens a floating chat where students can:
   • ask a golf question (slice, hook, distance control, mental game, etc.),
   • describe a recent score or stat block,
   • paste notes about a swing video they uploaded,
@@ -172,7 +172,7 @@ Handicap tracking
 
 Dashboard (student home)
 - Top-right: plan pill showing current membership tier.
-- Cards typically include: Upcoming Lessons, Active Package status, SC Points + Redeem, Recent Videos / Upload, Apex AI shortcut, sticky "Book a Lesson" CTA, Pro Zone shortcut (when accessible), Notifications.
+- Cards typically include: Upcoming Lessons, Active Package status, SC Points + Redeem, Recent Videos / Upload, Margea AI shortcut, sticky "Book a Lesson" CTA, Pro Zone shortcut (when accessible), Notifications.
 - Mobile-first layout with safe-area handling so the sticky CTA never overlaps the iOS home indicator.
 
 Notifications & emails
@@ -195,7 +195,7 @@ Things the AI should NOT promise or invent
 End of platform knowledge base.
 `;
 
-const ROUTER_SYSTEM_PROMPT = `You are the SC Golf Academy AI assistant router.
+const ROUTER_SYSTEM_PROMPT = `You are the Margea Golf Academy AI assistant router.
 Classify the student's message into ONE intent and write a short, helpful answer ONLY when the intent is non-coaching.
 
 Intents:
@@ -464,13 +464,13 @@ End of built-in golf knowledge.
 
 // ============================================================================
 // EXTENDED_KNOWLEDGE_BASE
-// Apex AI Golf Coaching Knowledge Base v1.0 (bilingual EN/ES). Adds explicit
+// Margea AI Golf Coaching Knowledge Base v1.0 (bilingual EN/ES). Adds explicit
 // ball-flight laws, grip/setup/putting/short-game/driving/iron play/course
 // management/mental game/practice plans/equipment/strokes-gained references.
 // Always available to the coaching step; complements GOLF_KNOWLEDGE_BASE.
 // ============================================================================
 const EXTENDED_KNOWLEDGE_BASE = `
-APEX AI — EXTENDED GOLF COACHING KNOWLEDGE BASE (v1.0, bilingual EN/ES)
+MARGEA AI — EXTENDED GOLF COACHING KNOWLEDGE BASE (v1.0, bilingual EN/ES)
 
 SECTION 1: BALL FLIGHT LAWS
 - Ball starts where the clubFACE points at impact (~85% influence).
@@ -644,7 +644,7 @@ ES: Strokes gained mide qué tantos golpes ganas/pierdes por categoría.
 End of extended knowledge base.
 `;
 
-const COACH_SYSTEM_PROMPT = `You are Apex AI, the in-app golf coach for SC Golf Academy.
+const COACH_SYSTEM_PROMPT = `You are Margea AI, the in-app golf coach for Margea Golf Academy.
 
 Your role is to provide high-quality, personalized golf coaching while subtly reinforcing that working with a real coach leads to faster and better results.
 
@@ -1063,7 +1063,7 @@ Deno.serve(async (req) => {
     // but using service role makes it consistent and lets us write coach_id later).
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE);
 
-    // Plan gate: Apex AI is not available on the Free / Member tier.
+    // Plan gate: Margea AI is not available on the Free / Member tier.
     // Staff, coaches and admins always pass.
     {
       const { data: roleRows } = await adminClient
@@ -1084,7 +1084,7 @@ Deno.serve(async (req) => {
           return jsonResp(
             {
               error:
-                "Apex AI is available on the Scratch, Pro, and Apex plans. Upgrade your plan to unlock it.",
+                "Margea AI is available on the Scratch, Pro, and Apex plans. Upgrade your plan to unlock it.",
               code: "subscription_required",
             },
             403,
@@ -1094,7 +1094,7 @@ Deno.serve(async (req) => {
     }
 
     // ── Plan gating ──
-    // Apex AI is intentionally open to ALL signed-in members (free, member,
+    // Margea AI is intentionally open to ALL signed-in members (free, member,
     // scratch, sc-included, pro, apex) — this matches the client-side
     // `hasApexAiAccess()` helper which always returns true. Previously this
     // function rejected anyone who wasn't on Pro/Apex with a 403, surfacing

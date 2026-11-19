@@ -444,7 +444,7 @@ export function PackageLessonsModal({ open, onOpenChange, pkg, studentId, onChan
         doc.setTextColor(...MUTED);
         doc.text(`Exportado ${today}`, margin, pageH - 18);
         doc.setTextColor(...GOLD);
-        doc.text('Apex Golf Academy', pageW - margin, pageH - 18, { align: 'right' });
+        doc.text('Margea Golf Academy', pageW - margin, pageH - 18, { align: 'right' });
       }
 
       const slug = (studentName || 'student')

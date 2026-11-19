@@ -554,7 +554,7 @@ export default function PlanSelectionPage() {
 
                         <div className="space-y-2 mb-4 flex-1">
                           {plan.benefits.map((b) => {
-                            const isApexAi = b.toLowerCase().includes('apex ai');
+                            const isApexAi = b.toLowerCase().includes('margea ai');
                             return (
                               <div key={b} className="flex items-center gap-2 text-xs" style={{ color: '#E8D5B0' }}>
                                 {isApexAi ? (
@@ -591,7 +591,7 @@ export default function PlanSelectionPage() {
                             );
                           })()}
                           {plan.excluded.map((b) => {
-                            const isApexAi = b.toLowerCase().includes('apex ai');
+                            const isApexAi = b.toLowerCase().includes('margea ai');
                             return (
                               <div key={b} className="flex items-center gap-2 text-xs" style={{ color: '#E8D5B0', opacity: isApexAi ? 0.55 : 0.3 }}>
                                 {isApexAi ? (

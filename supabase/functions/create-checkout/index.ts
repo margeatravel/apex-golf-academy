@@ -209,7 +209,7 @@ serve(async (req) => {
         );
       }
       const unitAmount = Math.round(pesos * 100);
-      const name = String(serverProductName || productName || effectivePriceId || "Apex Golf Lesson").slice(0, 120);
+      const name = String(serverProductName || productName || effectivePriceId || "Margea Golf Academy Lesson").slice(0, 120);
       const lookupKey = `apex_${(effectivePriceId || name)
         .toString()
         .toLowerCase()

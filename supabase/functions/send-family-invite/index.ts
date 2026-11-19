@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const FROM = "Apex Golf Academy <admin@margeagolfacademy.com>";
+const FROM = "Margea Golf Academy <admin@margeagolfacademy.com>";
 const APP_URL = "https://margeagolfacademy.com";
 const RESEND_API_URL = "https://api.resend.com/emails";
 
@@ -43,14 +43,14 @@ function buildEmail(opts: {
   const r = relLabel(rel, lang);
   const subject =
     lang === "en"
-      ? `${inviterName} invited you to link as family on Apex Golf`
-      : `${inviterName} te invitó a vincularte como familia en Apex Golf`;
+      ? `${inviterName} invited you to link as family on Margea Golf Academy`
+      : `${inviterName} te invitó a vincularte como familia en Margea Golf Academy`;
   const title =
     lang === "en" ? "You have a family invitation" : "Tienes una invitación familiar";
   const body =
     lang === "en"
-      ? `${inviterName} invited you to link your Apex Golf account as their <strong style="color:#F4ECD8;">${r}</strong>. Open the app to accept or decline.`
-      : `${inviterName} te invitó a vincular tu cuenta de Apex Golf como su <strong style="color:#F4ECD8;">${r}</strong>. Entra a la app para aceptar o rechazar.`;
+      ? `${inviterName} invited you to link your Margea Golf Academy account as their <strong style="color:#F4ECD8;">${r}</strong>. Open the app to accept or decline.`
+      : `${inviterName} te invitó a vincular tu cuenta de Margea Golf Academy como su <strong style="color:#F4ECD8;">${r}</strong>. Entra a la app para aceptar o rechazar.`;
   const cta = lang === "en" ? "View invitation" : "Ver invitación";
   const foot =
     lang === "en"
@@ -74,7 +74,7 @@ function buildEmail(opts: {
         </td></tr>
         <tr><td style="color:rgba(244,236,216,0.5);font-size:12px;line-height:1.5;text-align:center;">${foot}</td></tr>
       </table>
-      <div style="color:rgba(244,236,216,0.35);font-size:11px;text-align:center;padding-top:16px;">Apex Golf Academy · ${APP_URL}</div>
+      <div style="color:rgba(244,236,216,0.35);font-size:11px;text-align:center;padding-top:16px;">Margea Golf Academy · ${APP_URL}</div>
     </td></tr>
   </table>
 </body></html>`;
@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
 
     const lang = settings.language;
     const { subject, html } = buildEmail({
-      inviterName: inviter?.full_name || inviter?.email || "Apex Golf",
+      inviterName: inviter?.full_name || inviter?.email || "Margea Golf Academy",
       inviteeName: invitee.full_name || invitee.email,
       rel: reqRow.relationship,
       link: `${redirectOrigin}/family`,

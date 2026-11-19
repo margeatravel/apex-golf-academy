@@ -572,7 +572,7 @@ ${pgaReferenceBlock}
 ${notesCorpus}
 `;
 
-    const systemPrompt = `You are Santiago Castilla, head coach at Apex Golf Academy (SC Golf Academy). 
+    const systemPrompt = `You are Santiago Castilla, head coach at Margea Golf Academy. 
 LANGUAGE LOCK — The entire report MUST be written in English. Translate any Spanish coach/student notes to English when paraphrasing. Do not output Spanish words except proper nouns (student or course names).
 
 DATA RULE (CRITICAL): Never invent facts. Use only the data provided above; if something is not recorded (for example a handicap goal), do not mention it. Capitalize plan names: Pro, Scratch, Apex Level.

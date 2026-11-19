@@ -48,7 +48,7 @@ export function buildGoogleCalendarUrl(opts: AddToGoogleCalendarOptions): string
   const dates = `${toGcalUtc(startUtcIso)}/${toGcalUtc(endIso)}`;
 
   const coachLabel = opts.coachLabel ?? 'your Coach';
-  const title = `Lesson with ${coachLabel} · Apex Golf Academy${opts.lessonType ? ` (${opts.lessonType})` : ''}`;
+  const title = `Lesson with ${coachLabel} · Margea Golf Academy${opts.lessonType ? ` (${opts.lessonType})` : ''}`;
   const detailsLines = [
     `Lesson type: ${opts.lessonType ?? 'Lesson'}`,
     `Duration: ${duration} minutes`,

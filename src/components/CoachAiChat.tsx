@@ -292,7 +292,7 @@ export function CoachAiChat({ studentContextId, studentContextName, onClearStude
         ) : showEmpty ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-4 py-8 space-y-2">
             <Sparkles className="h-8 w-8 text-[#F0C040]" />
-            <h3 className="text-[#F5F0E8] font-semibold">Apex AI for Coaches</h3>
+            <h3 className="text-[#F5F0E8] font-semibold">Margea AI for Coaches</h3>
             <p className="text-[#F5F0E8]/55 text-xs max-w-sm">
               Ask for drills, draft a follow-up message to a student, summarize a student's recent AI sessions, or
               get advice on positioning the Pro plan.

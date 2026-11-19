@@ -63,7 +63,7 @@ function buildEventBody(lesson: any, studentName: string) {
   ];
   if (lesson.coach_notes) descriptionLines.push(`Coach notes: ${lesson.coach_notes}`);
   if (lesson.student_notes) descriptionLines.push(`Student notes: ${lesson.student_notes}`);
-  descriptionLines.push('', 'Synced from SC Golf Academy');
+  descriptionLines.push('', 'Synced from Margea Golf Academy');
 
   return {
     summary,

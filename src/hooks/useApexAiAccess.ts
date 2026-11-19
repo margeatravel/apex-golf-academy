@@ -14,7 +14,7 @@ function planRowName(tier: string | null | undefined): string {
 }
 
 /**
- * Single source of truth for Apex AI access on the client.
+ * Single source of truth for Margea AI access on the client.
  * Reads the per-plan `apex_ai_enabled` flag from billing_plans (the same field
  * the admin plan editor writes, and the same field the server RPC
  * `has_apex_ai_access` reads) and combines it with the paid grace window.

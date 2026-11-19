@@ -1,4 +1,4 @@
-// Pure helpers for the Apex revenue & hours PDF report.
+// Pure helpers for the Margea Golf Academy revenue & hours PDF report.
 
 export function lessonMinutes(l: { duration_minutes?: number | null; lesson_type?: string | null }): number {
   if (l.duration_minutes && l.duration_minutes > 0) return l.duration_minutes;

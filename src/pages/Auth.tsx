@@ -401,7 +401,7 @@ export default function Auth() {
           title: 'Account created!',
           description: isStaffInvite || staffMode
             ? 'Staff account created. You can now sign in.'
-            : 'Welcome to Apex Golf Academy. Check your email for a welcome message!',
+            : 'Welcome to Margea Golf Academy. Check your email for a welcome message!',
         });
       }
     } catch (error: any) {
@@ -511,7 +511,7 @@ export default function Auth() {
                       : `${referralInfo.inviter_name} invited you`}
                   </div>
                   <div className="text-ivory/70 text-xs leading-relaxed">
-                    Sign up to claim your spot at Apex Golf Academy
+                    Sign up to claim your spot at Margea Golf Academy
                     {referralInfo.inviter_is_coach ? ' and get linked to your Coach automatically.' : '.'}
                   </div>
                 </div>
@@ -600,7 +600,7 @@ export default function Auth() {
                       By Invitation Only
                     </h2>
                     <p className="text-sm text-ivory/60 leading-relaxed max-w-xs mx-auto">
-                      Apex Golf Academy is a private community. Enter your invitation code to continue.
+                      Margea Golf Academy is a private community. Enter your invitation code to continue.
                     </p>
                   </div>
                 </div>
@@ -868,7 +868,7 @@ export default function Auth() {
                   <div className="flex-1 min-w-0">
                     <div className="text-[10px] uppercase tracking-[0.25em] text-gold-accent/90 mb-0.5">Members only</div>
                     <div className="text-sm font-semibold text-ivory">Request access with an invitation</div>
-                    <div className="text-xs text-ivory/50 mt-0.5">Apex Golf Academy is invite-only.</div>
+                    <div className="text-xs text-ivory/50 mt-0.5">Margea Golf Academy is invite-only.</div>
                   </div>
                   <span className="text-gold-accent text-lg transition-transform group-hover:translate-x-0.5">→</span>
                 </button>

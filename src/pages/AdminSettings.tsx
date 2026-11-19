@@ -204,7 +204,7 @@ export function PlanAccessWarning({ plan }: { plan: Partial<BillingPlan> }) {
   const included = (plan.features || []).join(' ').toLowerCase();
   const issues: string[] = [];
   if (!(plan.pro_zone_enabled ?? false) && included.includes('pro zone')) issues.push('Pro Zone');
-  if (!(plan.apex_ai_enabled ?? true) && included.includes('apex ai')) issues.push('Apex AI');
+  if (!(plan.apex_ai_enabled ?? true) && included.includes('apex ai')) issues.push('Margea AI');
   if (!issues.length) return null;
   return (
     <div className="flex items-start gap-2 p-2 rounded-lg" style={{ background: 'rgba(251,191,36,0.1)', border: '1px solid rgba(251,191,36,0.3)' }}>
@@ -319,7 +319,7 @@ function PlanForm({
       </div>
       <div className="flex items-center gap-2">
         <Switch checked={plan.apex_ai_enabled ?? true} onCheckedChange={v => onChange('apex_ai_enabled', v)} />
-        <span style={{ color: '#E8D5B0', fontSize: 12 }}>Apex AI access</span>
+        <span style={{ color: '#E8D5B0', fontSize: 12 }}>Margea AI access</span>
       </div>
       <div className="flex items-center gap-2">
         <Switch checked={plan.pro_zone_enabled ?? false} onCheckedChange={v => onChange('pro_zone_enabled', v)} />

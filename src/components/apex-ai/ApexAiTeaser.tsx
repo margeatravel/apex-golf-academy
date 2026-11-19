@@ -21,7 +21,7 @@ const BUBBLES: { role: 'user' | 'ai'; text: string }[] = [
 ];
 
 /**
- * Conversion teaser shown at /ai-coach to viewers without Apex AI access.
+ * Conversion teaser shown at /ai-coach to viewers without Margea AI access.
  * Mirrors the real chat screen (same dark backdrop + header) with a blurred
  * placeholder conversation behind a glass upsell card. Presentation only —
  * no data, queries or AI calls involved.
@@ -59,7 +59,7 @@ export function ApexAiTeaser() {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <Sparkles className="h-5 w-5" style={{ color: '#F0C040' }} />
-          <span className="font-semibold text-[#F5F0E8]">Apex AI</span>
+          <span className="font-semibold text-[#F5F0E8]">Margea AI</span>
         </div>
         <LanguageToggle variant="header" />
       </div>

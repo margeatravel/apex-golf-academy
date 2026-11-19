@@ -8,7 +8,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
  * Single source of truth for the STUDENT side-menu navigation.
  * Both the desktop sidebar (StudentBottomNav) and the mobile drawer
  * (MobileMenu) render from this exact flat list, in this exact order:
- * Inicio, Mis clases, Videos, Pro Zone, Reporte de avances, Apex AI, Mi perfil.
+ * Inicio, Mis clases, Videos, Pro Zone, Reporte de avances, Margea AI, Mi perfil.
  *
  * Actions (Book, Add a Round) and account extras (Mi plan, Contactar Coach,
  * Ajustes) live on the surfaces that own them: the bottom bar / "+" window,

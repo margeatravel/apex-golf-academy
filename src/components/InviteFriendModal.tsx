@@ -225,10 +225,10 @@ export function InviteFriendModal({
     const who = inviterName || 'a friend';
     const intro =
       purpose === 'coach_code'
-        ? `${who} invited you to train at Apex Golf Academy ⛳ — entering this code links you as their student.`
+        ? `${who} invited you to train at Margea Golf Academy ⛳ — entering this code links you as their student.`
         : purpose === 'access_link'
-        ? `${who} invited you to Apex Golf Academy ⛳ — use this code to get app access.`
-        : `${who} invited you to join Apex Golf Academy ⛳ — track lessons, swing videos and pro tips.`;
+        ? `${who} invited you to Margea Golf Academy ⛳ — use this code to get app access.`
+        : `${who} invited you to join Margea Golf Academy ⛳ — track lessons, swing videos and pro tips.`;
     const message = isOwnerLink
       ? shareCode
       : `${intro}\n\n` +
@@ -237,7 +237,7 @@ export function InviteFriendModal({
     // Native share sheet first (mobile), then WhatsApp link, then clipboard.
     if (typeof navigator.share === 'function') {
       try {
-        await navigator.share({ title: 'Apex Golf Academy', text: message });
+        await navigator.share({ title: 'Margea Golf Academy', text: message });
         return;
       } catch (err: any) {
         if (err?.name === 'AbortError') return;

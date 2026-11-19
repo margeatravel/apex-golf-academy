@@ -102,8 +102,8 @@ export function VideoCardMenu({ video, studentId }: VideoCardMenuProps) {
 
   const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
   const shareUrl = `${SUPABASE_URL}/functions/v1/video-share?id=${video.id}`;
-  const shareTitle = video.title || 'Apex Golf Academy video';
-  const shareText = `${shareTitle} — Apex Golf Academy`;
+  const shareTitle = video.title || 'Margea Golf Academy video';
+  const shareText = `${shareTitle} — Margea Golf Academy`;
 
   const handleNativeShare = async () => {
     const nav: any = navigator;
@@ -455,7 +455,7 @@ export function VideoCardMenu({ video, studentId }: VideoCardMenuProps) {
             </div>
             <div className="p-3">
               <p className="text-sm font-medium line-clamp-2">{shareTitle}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 font-apex tracking-[0.18em] uppercase">Apex Golf Academy</p>
+              <p className="text-xs text-muted-foreground mt-0.5 font-apex tracking-[0.18em] uppercase">Margea Golf Academy</p>
             </div>
           </div>
 

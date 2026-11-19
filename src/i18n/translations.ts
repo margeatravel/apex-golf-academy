@@ -247,7 +247,7 @@ export const translations = {
       continueToPayment: 'Continue to Payment',
       securePaymentStripe: 'Secure payment via Stripe',
       // Dashboard tile labels
-      apexAi: 'Apex AI',
+      apexAi: 'Margea AI',
       apexAiSub: 'Ask a question',
       managePlan: 'Manage Plan',
       managePlanSub: 'View & upgrade',
@@ -811,7 +811,7 @@ export const translations = {
         par5Avg: 'Par 5 avg',
       },
       aiInsights: {
-        empty: "This student hasn't used the Apex AI yet.",
+        empty: "This student hasn't used the Margea AI yet.",
       },
     },
 
@@ -825,7 +825,7 @@ export const translations = {
       },
       student: {
         welcome: {
-          title: 'Welcome to Apex Golf Academy 👋',
+          title: 'Welcome to Margea Golf Academy 👋',
           desc: "Let's take a quick 30-second tour of your dashboard.",
         },
         greeting: {
@@ -841,7 +841,7 @@ export const translations = {
           desc: 'Your Coach’s curated tips, drills and short lessons. Tap to explore the library.',
         },
         apexAi: {
-          title: 'Apex AI',
+          title: 'Margea AI',
           desc: 'Your personal AI golf coach — ask questions, get drills, and review your swing anytime.',
         },
         managePlan: {
@@ -858,7 +858,7 @@ export const translations = {
         },
         install: {
           title: 'Install on your phone 📱',
-          desc: 'Tap here anytime to add Apex to your Home Screen — one-tap access, no browser bars.',
+          desc: 'Tap here anytime to add Margea to your Home Screen — one-tap access, no browser bars.',
         },
         closing: {
           title: "You're all set 🏌️",
@@ -1309,7 +1309,7 @@ export const translations = {
       continueToPayment: 'Continuar al pago',
       securePaymentStripe: 'Pago seguro vía Stripe',
       // Dashboard tile labels
-      apexAi: 'Apex AI',
+      apexAi: 'Margea AI',
       apexAiSub: 'Hazle una pregunta',
       managePlan: 'Mi Plan',
       managePlanSub: 'Ver y mejorar',
@@ -1854,7 +1854,7 @@ export const translations = {
         par5Avg: 'Prom. Par 5',
       },
       aiInsights: {
-        empty: 'Este alumno aún no ha usado el Apex AI.',
+        empty: 'Este alumno aún no ha usado el Margea AI.',
       },
     },
 
@@ -1868,7 +1868,7 @@ export const translations = {
       },
       student: {
         welcome: {
-          title: 'Bienvenido a Apex Golf Academy 👋',
+          title: 'Bienvenido a Margea Golf Academy 👋',
           desc: 'Te damos un recorrido rápido de 30 segundos por tu panel.',
         },
         greeting: {
@@ -1884,7 +1884,7 @@ export const translations = {
           desc: 'Tips, ejercicios y mini lecciones de tu Coach. Toca para explorar la biblioteca.',
         },
         apexAi: {
-          title: 'Apex AI',
+          title: 'Margea AI',
           desc: 'Tu coach de golf con IA — haz preguntas, recibe ejercicios y revisa tu swing cuando quieras.',
         },
         managePlan: {
@@ -1901,7 +1901,7 @@ export const translations = {
         },
         install: {
           title: 'Instala la app en tu teléfono 📱',
-          desc: 'Toca aquí cuando quieras para añadir Apex a tu pantalla de inicio — un toque, sin barras del navegador.',
+          desc: 'Toca aquí cuando quieras para añadir Margea a tu pantalla de inicio — un toque, sin barras del navegador.',
         },
         closing: {
           title: '¡Listo! 🏌️',

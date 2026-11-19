@@ -34,7 +34,7 @@ export function AiInsightsTab({ studentId }: { studentId: string }) {
         <CardContent className="p-8 text-center space-y-2">
           <Sparkles className="h-6 w-6 mx-auto text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
-            This student hasn't used the Apex AI yet.
+            This student hasn't used the Margea AI yet.
           </p>
           <p className="text-xs text-muted-foreground/80">
             When they ask questions or request practice plans, every interaction will appear here for your review.

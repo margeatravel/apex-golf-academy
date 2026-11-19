@@ -65,7 +65,7 @@ export function buildRevenueReportPdf(d: RevenueReportInput): Blob {
   const paintBg = () => { doc.setFillColor(...BG); doc.rect(0, 0, W, H, 'F'); };
   const footer = () => {
     doc.setFontSize(8); doc.setTextColor(...MUTED);
-    doc.text(`Apex Golf Academy · ${d.coachName} · ${d.today}`, X, H - 8);
+    doc.text(`Margea Golf Academy · ${d.coachName} · ${d.today}`, X, H - 8);
     doc.text(String(doc.getNumberOfPages()), W - X, H - 8, { align: 'right' });
   };
   const newPage = () => { footer(); doc.addPage(); paintBg(); y = 18; };

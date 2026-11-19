@@ -124,7 +124,7 @@ export function AiCoachChatModal({ open, onOpenChange }: Props) {
       );
     } catch (e: any) {
       setMessages((prev) => prev.filter((m) => m.id !== loadingMsg.id));
-      toast.error(e?.message ?? "Apex AI is unavailable right now.");
+      toast.error(e?.message ?? "Margea AI is unavailable right now.");
     } finally {
       setSubmitting(false);
     }
@@ -246,7 +246,7 @@ export function AiCoachChatModal({ open, onOpenChange }: Props) {
   return (
     <div
       role="dialog"
-      aria-label="Apex AI chat"
+      aria-label="Margea AI chat"
       className="fixed z-50 flex flex-col overflow-hidden shadow-2xl rounded-2xl border border-white/10
                  inset-x-3 bottom-3 top-3
                  sm:inset-auto sm:right-4 sm:bottom-4 sm:top-auto sm:w-[380px]"
@@ -262,7 +262,7 @@ export function AiCoachChatModal({ open, onOpenChange }: Props) {
       <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 flex-shrink-0">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5" style={{ color: "#F0C040" }} />
-          <span className="font-semibold text-[#F5F0E8]">Apex AI</span>
+          <span className="font-semibold text-[#F5F0E8]">Margea AI</span>
         </div>
         <button
           onClick={() => onOpenChange(false)}
@@ -292,7 +292,7 @@ export function AiCoachChatModal({ open, onOpenChange }: Props) {
                 </div>
                 <div className="space-y-1">
                   <p className="text-sm font-semibold text-[#F5F0E8]">
-                    How can Apex AI help today?
+                    How can Margea AI help today?
                   </p>
                   <p className="text-xs text-[#F5F0E8]/55 max-w-sm mx-auto">
                     Ask about your swing, recent rounds, practice plans, or how the academy works.
@@ -344,7 +344,7 @@ export function AiCoachChatModal({ open, onOpenChange }: Props) {
                     </div>
                     <div className="flex flex-col gap-1 max-w-[85%]">
                       <span className="text-[10px] uppercase tracking-wider text-[#F5F0E8]/55 px-1">
-                        Apex AI
+                        Margea AI
                       </span>
                       <div
                         className="rounded-2xl rounded-tl-md px-4 py-3 text-sm flex items-center gap-2"
@@ -376,7 +376,7 @@ export function AiCoachChatModal({ open, onOpenChange }: Props) {
                   </div>
                   <div className="flex flex-col gap-1 min-w-0 flex-1">
                     <span className="text-[10px] uppercase tracking-wider text-[#F5F0E8]/55 px-1">
-                      Apex AI
+                      Margea AI
                     </span>
                     {m.role === "assistant" ? (
                       <AiCoachResponseCard session={m.session} />
@@ -413,7 +413,7 @@ export function AiCoachChatModal({ open, onOpenChange }: Props) {
               value={text}
               onChange={(e) => setText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Apex AI…"
+              placeholder="Message Margea AI…"
               rows={1}
               maxLength={4000}
               className="flex-1 resize-none min-h-[44px] max-h-32 bg-white/5 border-white/10 text-[#F5F0E8] placeholder:text-[#F5F0E8]/30 rounded-xl"

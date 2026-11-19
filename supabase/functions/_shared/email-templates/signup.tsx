@@ -31,7 +31,7 @@ export const SignupEmail = ({
     <Preview>Confirm your email for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={brand}>SC Golf Academy</Heading>
+        <Heading style={brand}>Margea Golf Academy</Heading>
         <Heading style={h1}>Confirm your email</Heading>
         <Text style={text}>
           Thanks for signing up for{' '}

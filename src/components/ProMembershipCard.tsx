@@ -27,7 +27,7 @@ export function ProMembershipCard({ studentId, name, es }: { studentId?: string;
   return (
     <section className="lesson-glass rounded-3xl p-5 space-y-4">
       <div className="text-center">
-        <p className="text-xs tracking-[0.3em] font-bold text-gold">APEX GOLF ACADEMY</p>
+        <p className="text-xs tracking-[0.3em] font-bold text-gold">MARGEA GOLF ACADEMY</p>
         <p className="text-[10px] text-ivory/50">by Santiago Castilla</p>
         {name && <p className="mt-2 text-lg font-semibold text-ivory">{name}</p>}
       </div>
@@ -43,7 +43,7 @@ export function ProMembershipCard({ studentId, name, es }: { studentId?: string;
         </ul>
       </div>
       <p className="text-xs text-ivory/60 border-t border-ivory/10 pt-3">
-        {es ? 'Tus beneficios y precios preferenciales se mantienen mientras sigas en Apex Golf Academy. Si cancelas, al volver empiezas de nuevo desde el precio público.' : 'Your benefits and preferred pricing stay as long as you remain with Apex Golf Academy. If you cancel, you start again at the public price.'}
+        {es ? 'Tus beneficios y precios preferenciales se mantienen mientras sigas en Margea Golf Academy. Si cancelas, al volver empiezas de nuevo desde el precio público.' : 'Your benefits and preferred pricing stay as long as you remain with Margea Golf Academy. If you cancel, you start again at the public price.'}
       </p>
     </section>
   );

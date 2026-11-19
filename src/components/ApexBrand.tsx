@@ -36,7 +36,7 @@ export const ApexMark: React.FC<ApexMarkProps> = ({ size = "md", className = "",
         className="font-apex text-gold-accent leading-none"
         style={{ fontSize: s.mono, letterSpacing: "0.02em" }}
       >
-        A
+        M
       </span>
     </div>
   );
@@ -70,7 +70,7 @@ export const ApexBrand: React.FC<ApexBrandProps> = ({
           className="font-apex uppercase text-ivory tracking-[0.18em] truncate"
           style={{ fontSize: s.word }}
         >
-          Apex Golf Academy
+          Margea Golf Academy
         </span>
         {showTagline && (
           <span

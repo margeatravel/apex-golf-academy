@@ -1,7 +1,7 @@
 // Coach AI Chat — coach-only AI assistant.
 // Streams responses from the Lovable AI Gateway (SSE), persists messages to
 // public.coach_ai_messages. Uses the same PLATFORM_CONTEXT as the student-facing
-// Apex AI so it knows the academy inside-out, but with a coach-focused system
+// Margea AI so it knows the academy inside-out, but with a coach-focused system
 // prompt.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
@@ -14,8 +14,8 @@ const corsHeaders = {
 };
 
 const PLATFORM_CONTEXT = `
-SC GOLF ACADEMY — PLATFORM KNOWLEDGE BASE
-- App name: SC Golf Academy ("Apex Golf"). In-app AI assistant is "Apex AI".
+MARGEA GOLF ACADEMY — PLATFORM KNOWLEDGE BASE
+- App name: Margea Golf Academy. In-app AI assistant is "Margea AI".
 - Private golf academy (the head coach + support staff + students).
 - Languages: English & Spanish. Timezone: America/Cancun. Currency: MXN.
 - Roles: student, staff (scoped), admin/coach.
@@ -24,14 +24,14 @@ SC GOLF ACADEMY — PLATFORM KNOWLEDGE BASE
 - Lesson types: Range, Short Game, Putting, Playing Lesson (Campo, consumes 2 package slots), Video Analysis.
 - Lesson packages: 5/10/20/30. Auto-deduct on completion. Shared package members supported.
 - Paid Video Analysis ~$550 MXN, or 200 SC Points = 1 free.
-- Apex AI: students get a structured (quick diagnosis, main priority, 3 drills, weekly plan, coach notes with disclaimer) answer for golf coaching, or a short grounded answer for booking/payment/membership/platform-help. Full session history stored in ai_coach_sessions and visible to coach in AI Insights.
+- Margea AI: students get a structured (quick diagnosis, main priority, 3 drills, weekly plan, coach notes with disclaimer) answer for golf coaching, or a short grounded answer for booking/payment/membership/platform-help. Full session history stored in ai_coach_sessions and visible to coach in AI Insights.
 - Pro Zone: gated to Scratch/Pro/SC. Tips, drills, Round Stats, curated content.
 - SC Points gamification: +10 lesson, +5 self-uploaded video, +15 monthly streak, +20 referral.
 - Handicap tracking with history. TheGrint + GHIN supported.
 - All data RLS-protected per-student. Coach sees all students.
 `;
 
-const COACH_SYSTEM_PROMPT = `You are "Apex AI for Coaches" — a private assistant for the head coach of SC Golf Academy.
+const COACH_SYSTEM_PROMPT = `You are "Margea AI for Coaches" — a private assistant for the head coach of Margea Golf Academy.
 
 You help the coach with:
 - Pedagogy: drills, progressions, lesson plans, technical diagnoses.
@@ -51,7 +51,7 @@ Style:
 
 ANTI-HALLUCINATION RULES (CRITICAL — never break these):
 - You have NO access to any student's handicap, plan tier, lessons, AI sessions, drills, or notes UNLESS a "STUDENT CONTEXT" or "STUDENT LOOKUP RESULTS" block for that exact student appears below in this prompt.
-- Never invent a handicap number, plan tier, lesson history, drills the student has been working on, previous Apex AI conversations, or coach notes. If the data is not in this prompt, say so plainly and tell the coach to open the student in the app or pick them from the student selector.
+- Never invent a handicap number, plan tier, lesson history, drills the student has been working on, previous Margea AI conversations, or coach notes. If the data is not in this prompt, say so plainly and tell the coach to open the student in the app or pick them from the student selector.
 - If the coach mentions a student by name and a "STUDENT LOOKUP RESULTS" block is present, only refer to the students listed there. If the block says "No students matching ..." then the student is not in the database — tell the coach that and ask them to confirm the spelling, do NOT pretend the student exists.
 - Never contradict yourself within the same conversation about whether a student exists. If an earlier turn made claims that conflict with the current STUDENT CONTEXT / STUDENT LOOKUP RESULTS blocks, treat the blocks as the source of truth and quietly correct yourself.
 
@@ -183,7 +183,7 @@ async function buildStudentLookupBlock(
     lines.push(`   Lessons in last 90 days: ${m?.lessonCount ?? 0}`);
     if (row.ai_memory) lines.push(`   AI memory: ${String(row.ai_memory).slice(0, 300)}`);
     if (m && m.sessions.length > 0) {
-      lines.push("   Recent Apex AI sessions:");
+      lines.push("   Recent Margea AI sessions:");
       m.sessions.forEach((s: any) => {
         const when = new Date(s.created_at).toISOString().slice(0, 10);
         const q = (s.student_input || "").slice(0, 160);
@@ -191,7 +191,7 @@ async function buildStudentLookupBlock(
         lines.push(`     - [${when}] (${s.intent || "n/a"}) Q: ${q}${a ? ` | A: ${a}` : ""}`);
       });
     } else {
-      lines.push("   Recent Apex AI sessions: none");
+      lines.push("   Recent Margea AI sessions: none");
     }
   }
 
@@ -312,7 +312,7 @@ Deno.serve(async (req) => {
         if (prof.ai_memory) lines.push(`AI memory: ${prof.ai_memory}`);
         if (sessions && sessions.length > 0) {
           lines.push("");
-          lines.push("Recent Apex AI sessions (most recent first):");
+          lines.push("Recent Margea AI sessions (most recent first):");
           sessions.forEach((s: any, i: number) => {
             const when = new Date(s.created_at).toISOString().slice(0, 10);
             const q = (s.student_input || "").slice(0, 200);

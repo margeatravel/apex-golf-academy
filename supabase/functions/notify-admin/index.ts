@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const ADMIN_EMAIL = "admin@margeagolfacademy.com";
-const FROM = "SC Golf Academy <admin@margeagolfacademy.com>";
+const FROM = "Margea Golf Academy <admin@margeagolfacademy.com>";
 const APP_URL = "https://golfproconnect.lovable.app";
 const TZ = "America/Cancun"; // UTC-5, no DST
 
@@ -155,7 +155,7 @@ function build(p: NotifyPayload): BuildResult {
         subject: `New student registered: ${name}${emailSuffix}`,
         icon: "👋",
         title: "New student registered",
-        subtitle: "A new student just signed up for SC Golf Academy",
+        subtitle: "A new student just signed up for Margea Golf Academy",
         detailsHtml: cardRow("Name", name) + cardRow("Email", p.studentEmail || "—"),
         ctaText: "View Students",
         ctaHref: `${APP_URL}/admin/students`,
@@ -412,7 +412,7 @@ function renderHtml(b: BuildResult, notes?: string): string {
   <tr><td align="center">
     <table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background-color:#1a2e1c;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
       <tr><td style="background:linear-gradient(135deg,#1a3a1c 0%,#0d2410 100%);padding:30px 32px;text-align:center;border-bottom:1px solid rgba(239,159,39,0.25);">
-        <p style="margin:0;color:#EF9F27;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">SC Golf Academy</p>
+        <p style="margin:0;color:#EF9F27;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Margea Golf Academy</p>
         <h1 style="margin:6px 0 0;color:#ffffff;font-size:20px;font-weight:700;">⛳ Admin Notification</h1>
       </td></tr>
       <tr><td style="padding:32px 32px 24px;">
@@ -429,7 +429,7 @@ function renderHtml(b: BuildResult, notes?: string): string {
       </td></tr>
       <tr><td style="background:#0d2410;padding:20px 32px;text-align:center;border-top:1px solid rgba(239,159,39,0.18);">
         <p style="margin:0;color:rgba(245,240,232,0.55);font-size:12px;line-height:1.6;">
-          SC Golf Academy · <a href="mailto:${ADMIN_EMAIL}" style="color:#EF9F27;text-decoration:none;">${ADMIN_EMAIL}</a>
+          Margea Golf Academy · <a href="mailto:${ADMIN_EMAIL}" style="color:#EF9F27;text-decoration:none;">${ADMIN_EMAIL}</a>
         </p>
         <p style="margin:6px 0 0;color:rgba(245,240,232,0.35);font-size:11px;">Sent automatically · ${fmtDateTimeCancun(new Date())}</p>
       </td></tr>

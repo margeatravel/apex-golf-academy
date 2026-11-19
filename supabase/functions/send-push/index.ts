@@ -22,7 +22,7 @@ Deno.serve(async (req) => {
     const payloadIn = await req.json().catch(() => ({}));
     const record = payloadIn?.record ?? payloadIn;
 
-    const title = String(record?.title || 'Apex Golf Academy').slice(0, 120);
+    const title = String(record?.title || 'Margea Golf Academy').slice(0, 120);
     const body = String(record?.body || '').slice(0, 300);
     const url = String(record?.link_url || '/');
     const tag = String(record?.id || record?.type || 'apex-broadcast');

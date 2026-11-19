@@ -26,7 +26,7 @@ export const RecoveryEmail = ({
     <Preview>Reset your password for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Heading style={brand}>SC Golf Academy</Heading>
+        <Heading style={brand}>Margea Golf Academy</Heading>
         <Heading style={h1}>Reset your password</Heading>
         <Text style={text}>
           We received a request to reset your password for {siteName}. Click

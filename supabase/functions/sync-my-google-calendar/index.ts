@@ -155,8 +155,8 @@ async function syncUser(admin: any, userId: string): Promise<Record<string, unkn
       const k = `lesson:${l.id}`;
       desired.set(k, {
         key: k,
-        summary: `Apex · ${other}`,
-        description: `${l.lesson_type} — Apex Golf Academy`,
+        summary: `Margea · ${other}`,
+        description: `${l.lesson_type} — Margea Golf Academy`,
         start: { dateTime: new Date(start).toISOString(), timeZone: TZ },
         end: { dateTime: new Date(end).toISOString(), timeZone: TZ },
       });

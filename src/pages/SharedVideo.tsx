@@ -92,7 +92,7 @@ export default function SharedVideo() {
         <h1 className="text-2xl font-semibold mb-2">Video unavailable</h1>
         <p className="text-[#F5F0E8]/70 mb-6">{error ?? "This video may have been removed."}</p>
         <Button asChild className="bg-[#4a7c59] hover:bg-[#4a7c59]/80">
-          <Link to="/">Go to Apex Golf Academy</Link>
+          <Link to="/">Go to Margea Golf Academy</Link>
         </Button>
       </div>
     );
@@ -139,7 +139,7 @@ export default function SharedVideo() {
 
         <div className="pt-4">
           <Button asChild className="bg-[#4a7c59] hover:bg-[#4a7c59]/80 text-[#F5F0E8]">
-            <Link to="/">Watch more on Apex Golf Academy</Link>
+            <Link to="/">Watch more on Margea Golf Academy</Link>
           </Button>
         </div>
       </main>

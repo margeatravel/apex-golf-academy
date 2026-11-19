@@ -1,7 +1,7 @@
 {
-  "name": "Apex Golf Academy",
-  "short_name": "Apex",
-  "description": "Apex Golf Academy — premium coaching portal for students and instructors",
+  "name": "Margea Golf Academy",
+  "short_name": "Margea",
+  "description": "Margea Golf Academy — premium coaching portal for students and instructors",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

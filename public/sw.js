@@ -1,4 +1,4 @@
-/* Apex Golf — Web Push messaging service worker.
+/* Margea Golf Academy — Web Push messaging service worker.
    Push/notification handling only. No app-shell caching, no offline behavior. */
 
 self.addEventListener('install', () => self.skipWaiting());
@@ -9,10 +9,10 @@ self.addEventListener('push', (event) => {
   try {
     payload = event.data ? event.data.json() : {};
   } catch (_e) {
-    payload = { title: 'Apex Golf', body: event.data ? event.data.text() : '' };
+    payload = { title: 'Margea Golf Academy', body: event.data ? event.data.text() : '' };
   }
 
-  const title = payload.title || 'Apex Golf Academy';
+  const title = payload.title || 'Margea Golf Academy';
   const options = {
     body: payload.body || '',
     icon: '/icons/icon-192.png',

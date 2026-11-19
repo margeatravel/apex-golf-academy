@@ -34,7 +34,7 @@ export default function PrivacyPolicy() {
               Privacidad
             </div>
             <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-              Aviso de Privacidad de Apex Golf Academy
+              Aviso de Privacidad de Margea Golf Academy
             </h1>
             <p className="text-sm text-ivory/50">
               Última actualización: 1 de noviembre de 2026
@@ -44,7 +44,7 @@ export default function PrivacyPolicy() {
           <section className="glass-card p-6 space-y-3">
             <h2 className="text-lg font-semibold text-gold-accent">1. Responsable de tus datos</h2>
             <p className="text-sm leading-relaxed text-ivory/80">
-              El responsable del tratamiento de tus datos personales es <strong>Apex Golf Academy</strong>,
+              El responsable del tratamiento de tus datos personales es <strong>Margea Golf Academy</strong>,
               con domicilio en Puerto Cancún, Cancún, Quintana Roo, México. Para cualquier asunto
               relacionado con este aviso puedes escribirnos a{' '}
               <a href="mailto:admin@margeagolfacademy.com" className="text-gold-accent hover:underline">
@@ -126,7 +126,7 @@ export default function PrivacyPolicy() {
           </section>
 
           <p className="text-center text-xs text-ivory/40 pt-4">
-            Apex Golf Academy · Puerto Cancún, Cancún, Quintana Roo, México
+            Margea Golf Academy · Puerto Cancún, Cancún, Quintana Roo, México
           </p>
         </div>
       </div>

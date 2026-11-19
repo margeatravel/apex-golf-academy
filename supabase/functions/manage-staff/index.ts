@@ -11,7 +11,7 @@ const SCOPE_LABELS: Record<string, string> = Object.fromEntries(
   STAFF_ACCESS_AREAS.map(area => [area.id, area.label]),
 );
 
-const FROM_EMAIL = "Apex Golf Academy <admin@margeagolfacademy.com>";
+const FROM_EMAIL = "Margea Golf Academy <admin@margeagolfacademy.com>";
 const APP_URL = "https://margeagolfacademy.com";
 const RESEND_API_URL = "https://api.resend.com/emails";
 
@@ -38,11 +38,11 @@ async function sendStaffWelcomeEmail(
           <div style="width:56px;height:56px;border-radius:14px;background:#0d1f18;border:2px solid #F0C040;color:#F0C040;font-weight:800;font-size:28px;line-height:52px;text-align:center;">A</div>
         </td></tr>
         <tr><td style="color:#F4ECD8;font-size:22px;font-weight:700;text-align:center;padding-bottom:8px;">
-          Bienvenido al equipo de Apex Golf
+          Bienvenido al equipo de Margea Golf Academy
         </td></tr>
         <tr><td style="color:rgba(244,236,216,0.8);font-size:15px;line-height:1.5;padding-bottom:20px;">
           ${greeting}<br/><br/>
-          Tu cuenta de staff en <strong style="color:#F4ECD8;">Apex Golf Academy</strong> ya está lista.
+          Tu cuenta de staff en <strong style="color:#F4ECD8;">Margea Golf Academy</strong> ya está lista.
           Inicia sesión con tu correo y el PIN de abajo (el PIN es tu contraseña).
         </td></tr>
         <tr><td style="padding-bottom:16px;">
@@ -62,7 +62,7 @@ async function sendStaffWelcomeEmail(
           Guarda este correo en un lugar seguro. Si necesitas cambiar tu PIN, contacta al administrador.
         </td></tr>
       </table>
-      <div style="color:rgba(244,236,216,0.35);font-size:11px;text-align:center;padding-top:16px;">Apex Golf Academy · ${APP_URL}</div>
+      <div style="color:rgba(244,236,216,0.35);font-size:11px;text-align:center;padding-top:16px;">Margea Golf Academy · ${APP_URL}</div>
     </td></tr>
   </table>
 </body></html>`;
@@ -77,7 +77,7 @@ async function sendStaffWelcomeEmail(
       body: JSON.stringify({
         from: FROM_EMAIL,
         to: [opts.email],
-        subject: "Tu cuenta de staff en Apex Golf Academy",
+        subject: "Tu cuenta de staff en Margea Golf Academy",
         html,
       }),
     });

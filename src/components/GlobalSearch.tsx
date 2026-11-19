@@ -161,7 +161,7 @@ export function GlobalSearch({ variant = 'pill' }: GlobalSearchProps) {
       { label: 'Merge Students', path: '/admin/merge-students', keywords: 'merge duplicates students' },
       { label: 'Bulk Package Fix', path: '/admin/bulk-package-fix', keywords: 'packages bulk fix' },
       ...(role === 'admin' ? [{ label: 'Pro Zone Media', path: '/admin/pro-zone', keywords: 'pro zone content library media' }] : []),
-      ...(role !== 'admin' && hasPermission('pro_zone') ? [{ label: 'Pro Zone', path: '/pro-zone', keywords: 'pro zone apex ai content' }] : []),
+      ...(role !== 'admin' && hasPermission('pro_zone') ? [{ label: 'Pro Zone', path: '/pro-zone', keywords: 'pro zone margea ai content' }] : []),
       { label: 'Family Links', path: '/admin/family', keywords: 'family parent child links' },
       { label: 'Staff', path: '/admin/staff', keywords: 'staff team coaches' },
       { label: 'Invite Codes', path: '/admin/invites', keywords: 'invite codes invitations' },

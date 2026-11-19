@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const APP_ORIGIN = "https://golfproconnect.lovable.app";
-const SITE_NAME = "SC Golf Academy";
+const SITE_NAME = "Margea Golf Academy";
 const FALLBACK_IMAGE = `${APP_ORIGIN}/share-cover.jpg`;
 
 const BOT_UA = /(facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|TelegramBot|Discordbot|WhatsApp|SkypeUriPreview|Pinterest|redditbot|Applebot|Googlebot|bingbot|vkShare|iframely|Embedly|quora link preview)/i;
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
       .eq("id", id)
       .maybeSingle();
 
-    let title = "SC Golf Academy";
+    let title = "Margea Golf Academy";
     let description = "Coaching video";
     let image = FALLBACK_IMAGE;
     let videoUrl: string | null = null;

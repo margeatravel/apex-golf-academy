@@ -15,7 +15,7 @@ export function MarketingShowcase() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <FeatureShowcase
-        eyebrow="Apex AI"
+        eyebrow="Margea AI"
         eyebrowIcon={Bot}
         title="Your AI golf coach, on demand"
         description="Conversational AI trained on your Coach's methodology — ask anything about your swing, strategy, or practice plan and get an instant, personalized answer."
@@ -25,7 +25,7 @@ export function MarketingShowcase() {
           'Available 24/7 from any device',
         ]}
         image={mockupApexAi}
-        imageAlt="Apex AI coaching chat on iPhone"
+        imageAlt="Margea AI coaching chat on iPhone"
       />
       <FeatureShowcase
         eyebrow="Pro Zone"

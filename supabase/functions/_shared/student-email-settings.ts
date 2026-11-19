@@ -132,7 +132,7 @@ const S: Strings = {
   your_recurring: { es: "Tu horario recurrente", en: "Your recurring time" },
 
   // Subjects
-  subj_welcome: { es: "Bienvenido a SC Golf Academy 🏌️", en: "Welcome to SC Golf Academy 🏌️" },
+  subj_welcome: { es: "Bienvenido a Margea Golf Academy 🏌️", en: "Welcome to Margea Golf Academy 🏌️" },
   subj_lesson_booked: { es: "Tu clase está confirmada ✅", en: "Your lesson is confirmed ✅" },
   subj_lesson_cancelled: { es: "Tu clase fue cancelada ✅", en: "Your lesson has been cancelled ✅" },
   subj_lesson_skipped: { es: "Tu clase semanal se saltó ⏭", en: "Your weekly lesson was skipped ⏭" },
@@ -200,8 +200,8 @@ const S: Strings = {
   welcome_title: { es: "¡Bienvenido al equipo!", en: "Welcome to the Team!" },
   welcome_subtitle: { es: "Tu camino en el golf empieza ahora", en: "Your golf journey starts now" },
   welcome_intro: {
-    es: "¡Bienvenido a <strong style=\"color:#EF9F27;\">SC Golf Academy</strong>! Soy tu Coach y me da mucho gusto tenerte aquí. Ya sea que apenas empieces o vayas tras un handicap de un dígito, vamos a armar un plan para llegar ahí.",
-    en: "Welcome to <strong style=\"color:#EF9F27;\">SC Golf Academy</strong>! I'm your Coach, and I'm thrilled to have you on board. Whether you're brand new to the game or chasing a single-digit handicap, we'll build a plan that takes you there.",
+    es: "¡Bienvenido a <strong style=\"color:#EF9F27;\">Margea Golf Academy</strong>! Soy tu Coach y me da mucho gusto tenerte aquí. Ya sea que apenas empieces o vayas tras un handicap de un dígito, vamos a armar un plan para llegar ahí.",
+    en: "Welcome to <strong style=\"color:#EF9F27;\">Margea Golf Academy</strong>! I'm your Coach, and I'm thrilled to have you on board. Whether you're brand new to the game or chasing a single-digit handicap, we'll build a plan that takes you there.",
   },
   welcome_get_started: { es: "Empieza aquí", en: "Get started" },
   welcome_li_book: { es: "📅 <strong>Reserva una clase</strong> con tu Coach desde la app", en: "📅 <strong>Book a lesson</strong> with your Coach from the app" },
@@ -214,7 +214,7 @@ const S: Strings = {
   pkg_added_title: { es: "¡Paquete nuevo agregado!", en: "New Package Added!" },
   pkg_added_subtitle: { es: "Se agregó un paquete de clases a tu cuenta", en: "A lesson package was added to your account" },
   pkg_added_intro_pre: { es: "Buenas noticias — se acaba de agregar un nuevo paquete de", en: "Great news — a new" },
-  pkg_added_intro_post: { es: "clases a tu cuenta de SC Golf Academy.", en: "lesson package was just added to your SC Golf Academy account." },
+  pkg_added_intro_post: { es: "clases a tu cuenta de Margea Golf Academy.", en: "lesson package was just added to your Margea Golf Academy account." },
   pkg_added_close: {
     es: "¿Listo para reservar? Toca el botón amarillo <strong style=\"color:#EF9F27;\">\"Reservar clase\"</strong> en cualquier momento dentro de la app.",
     en: "Ready to book? Tap the yellow <strong style=\"color:#EF9F27;\">\"Book a Lesson\"</strong> button anytime in the app.",

@@ -138,15 +138,15 @@ export function MobileMenu({ isCoach, onSignOut, currentView }: MobileMenuProps)
   };
 
   const handleCopyStudentSite = async () => {
-    // Build the welcome message (intro + coach code + plain Apex link).
+    // Build the welcome message (intro + coach code + plain Margea link).
     const who = profile?.full_name?.split(' ')[0] || 'Tu coach';
     const buildMessage = (code: string | null) => {
       const url = STUDENT_SITE_URL;
       return code
-        ? `¡Hola! ${who} te invita a unirte a Apex Golf Academy ⛳ — sigue tus clases, videos de swing y tips de pro.\n\n` +
+        ? `¡Hola! ${who} te invita a unirte a Margea Golf Academy ⛳ — sigue tus clases, videos de swing y tips de pro.\n\n` +
           `1. Crea tu cuenta aquí: ${url}\n` +
           `2. Código de coach: ${code}`
-        : `¡Hola! Únete a Apex Golf Academy ⛳\n${url}`;
+        : `¡Hola! Únete a Margea Golf Academy ⛳\n${url}`;
     };
     const codePromise: Promise<string | null> = isDemoMode
       ? Promise.resolve(demoCoachCode)
@@ -416,7 +416,7 @@ export function MobileMenu({ isCoach, onSignOut, currentView }: MobileMenuProps)
             <>
               {/* Student drawer renders the SAME canonical flat list as the
                   desktop sidebar (useStudentNavEntries): Inicio, Mis clases,
-                  Videos, Pro Zone, Reporte de avances, Apex AI, Mi perfil. */}
+                  Videos, Pro Zone, Reporte de avances, Margea AI, Mi perfil. */}
               {studentNavEntries.map((item) => (
                 <button
                   key={item.label}

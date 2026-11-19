@@ -219,7 +219,7 @@ export function AiInsightsModal({ open, onOpenChange }: Props) {
               ) : studentSessions.length === 0 ? (
                 <Card className="bg-white/5 border-white/10 border-dashed">
                   <CardContent className="p-6 text-center text-sm text-[#F5F0E8]/55">
-                    This student hasn't used the Apex AI yet.
+                    This student hasn't used the Margea AI yet.
                   </CardContent>
                 </Card>
               ) : (

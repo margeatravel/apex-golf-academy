@@ -1,4 +1,4 @@
-/** Additive EN/ES strings for Pro Zone stats, rounds, drills and Apex AI. */
+/** Additive EN/ES strings for Pro Zone stats, rounds, drills and Margea AI. */
 export const prozone2 = {
   en: {
     stats: {
@@ -155,14 +155,14 @@ export const prozone2 = {
     aiCoach: {
       backToDashboard: 'Back to dashboard',
       exit: 'Exit',
-      closeAria: 'Close Apex AI',
-      helpTitle: 'How can Apex AI help today?',
+      closeAria: 'Close Margea AI',
+      helpTitle: 'How can Margea AI help today?',
       helpDesc: 'Ask about your swing, recent rounds, practice plans, or how the academy works.',
       disclaimer: 'AI-assisted feedback. Your coach can review every reply. No medical advice.',
       thinking: 'Thinking…',
-      composerPlaceholder: 'Message Apex AI…',
+      composerPlaceholder: 'Message Margea AI…',
       sendAria: 'Send message',
-      accessToast: 'Apex AI is available on Scratch, Pro, and Apex plans.',
+      accessToast: 'Margea AI is available on Scratch, Pro, and Apex plans.',
       userAskAvailability: 'Show me available lesson times.',
       userGeneratePlan: 'Generate a custom {plan} training plan for me.',
       plan1Week: '1-week',
@@ -173,7 +173,7 @@ export const prozone2 = {
       customPlanRequires: 'Custom plans require an active subscription.',
       errEmptyPlan: 'Plan response was empty.',
       errWriteMore: 'Please write a bit more so the AI can help.',
-      errUnavailable: 'Apex AI is unavailable right now.',
+      errUnavailable: 'Margea AI is unavailable right now.',
     },
     aiResponseCard: {
       question: 'Question',
@@ -196,8 +196,8 @@ export const prozone2 = {
       failed: 'Failed',
       pending: 'Pending…',
       failedBody: "The AI couldn't generate a response. Please try again.",
-      apexAiAsks: 'Apex AI asks',
-      apexAi: 'Apex AI',
+      apexAiAsks: 'Margea AI asks',
+      apexAi: 'Margea AI',
       noResponse: "The AI didn't return a response. Try rephrasing your message.",
       needsReviewNotice: 'This input was incomplete or unclear. Your coach should review this before you act on it.',
       quickDiagnosis: 'Quick diagnosis',
@@ -405,14 +405,14 @@ export const prozone2 = {
     aiCoach: {
       backToDashboard: 'Volver al panel',
       exit: 'Salir',
-      closeAria: 'Cerrar Apex AI',
-      helpTitle: '¿Cómo puede ayudarte Apex AI hoy?',
+      closeAria: 'Cerrar Margea AI',
+      helpTitle: '¿Cómo puede ayudarte Margea AI hoy?',
       helpDesc: 'Pregunta sobre tu swing, rondas recientes, planes de práctica o cómo funciona la academia.',
       disclaimer: 'Respuestas asistidas por IA. Tu coach puede revisar cada respuesta. No es consejo médico.',
       thinking: 'Pensando…',
-      composerPlaceholder: 'Envía un mensaje a Apex AI…',
+      composerPlaceholder: 'Envía un mensaje a Margea AI…',
       sendAria: 'Enviar mensaje',
-      accessToast: 'Apex AI está disponible en los planes Scratch, Pro y Apex.',
+      accessToast: 'Margea AI está disponible en los planes Scratch, Pro y Apex.',
       userAskAvailability: 'Muéstrame los horarios disponibles para clases.',
       userGeneratePlan: 'Genera un plan de entrenamiento personalizado de {plan} para mí.',
       plan1Week: '1 semana',
@@ -423,7 +423,7 @@ export const prozone2 = {
       customPlanRequires: 'Los planes personalizados requieren una suscripción activa.',
       errEmptyPlan: 'La respuesta del plan estaba vacía.',
       errWriteMore: 'Escribe un poco más para que la IA pueda ayudarte.',
-      errUnavailable: 'Apex AI no está disponible en este momento.',
+      errUnavailable: 'Margea AI no está disponible en este momento.',
     },
     aiResponseCard: {
       question: 'Pregunta',
@@ -446,8 +446,8 @@ export const prozone2 = {
       failed: 'Fallido',
       pending: 'Pendiente…',
       failedBody: 'La IA no pudo generar una respuesta. Intenta de nuevo.',
-      apexAiAsks: 'Apex AI pregunta',
-      apexAi: 'Apex AI',
+      apexAiAsks: 'Margea AI pregunta',
+      apexAi: 'Margea AI',
       noResponse: 'La IA no devolvió una respuesta. Intenta reformular tu mensaje.',
       needsReviewNotice: 'Esta información estaba incompleta o no era clara. Tu coach debe revisarla antes de que actúes.',
       quickDiagnosis: 'Diagnóstico rápido',

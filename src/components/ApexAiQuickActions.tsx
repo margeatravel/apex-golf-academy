@@ -37,7 +37,7 @@ const DAYS: { key: string; es: string; en: string }[] = [
 ];
 
 /**
- * Sticky quick-action chips above the composer in the Apex AI chat.
+ * Sticky quick-action chips above the composer in the Margea AI chat.
  * - "Check availability" is open to anyone who can reach the chat.
  * - Plan chips require an active subscriber; tapping one opens a day picker
  *   where the student chooses exactly 2 training days per week.

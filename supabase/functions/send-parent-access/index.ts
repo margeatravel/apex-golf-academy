@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const FROM = "Apex Golf Academy <admin@margeagolfacademy.com>";
+const FROM = "Margea Golf Academy <admin@margeagolfacademy.com>";
 const APP_URL = "https://margeagolfacademy.com";
 const RESEND_API_URL = "https://api.resend.com/emails";
 
@@ -39,10 +39,10 @@ function buildEmailHtml(opts: {
           <div style="width:56px;height:56px;border-radius:14px;background:#0d1f18;border:2px solid #F0C040;color:#F0C040;font-weight:800;font-size:28px;line-height:52px;text-align:center;">A</div>
         </td></tr>
         <tr><td style="color:#F4ECD8;font-size:22px;font-weight:700;text-align:center;padding-bottom:8px;">
-          Eres ${relLabel} de ${studentName} en Apex Golf
+          Eres ${relLabel} de ${studentName} en Margea Golf Academy
         </td></tr>
         <tr><td style="color:rgba(244,236,216,0.75);font-size:15px;line-height:1.5;text-align:center;padding-bottom:24px;">
-          ${inviterName} te agregó como <strong style="color:#F4ECD8;">${relLower}</strong> de <strong style="color:#F4ECD8;">${studentName}</strong> en Apex Golf Academy.
+          ${inviterName} te agregó como <strong style="color:#F4ECD8;">${relLower}</strong> de <strong style="color:#F4ECD8;">${studentName}</strong> en Margea Golf Academy.
           Podrás ver sus videos, lecciones, paquetes y avance — y reservar o pagar a su nombre.
         </td></tr>
         <tr><td align="center" style="padding-bottom:24px;">
@@ -53,7 +53,7 @@ function buildEmailHtml(opts: {
           Si no esperabas este correo, puedes ignorarlo.
         </td></tr>
       </table>
-      <div style="color:rgba(244,236,216,0.35);font-size:11px;text-align:center;padding-top:16px;">Apex Golf Academy · ${APP_URL}</div>
+      <div style="color:rgba(244,236,216,0.35);font-size:11px;text-align:center;padding-top:16px;">Margea Golf Academy · ${APP_URL}</div>
     </td></tr>
   </table>
 </body></html>`;
@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
       return json({ error: "RESEND_API_KEY not configured" }, 500);
     }
     const html = buildEmailHtml({ studentName, inviterName, actionLink, relLabel, relLower });
-    const subject = `Acceso de ${relLabel} a la cuenta de ${studentName} en Apex Golf`;
+    const subject = `Acceso de ${relLabel} a la cuenta de ${studentName} en Margea Golf Academy`;
 
     const resendRes = await fetch(RESEND_API_URL, {
       method: "POST",

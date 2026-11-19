@@ -40,7 +40,7 @@ export function InstallAppModal({ open, onOpenChange }: InstallAppModalProps) {
   const handleNativeInstall = async () => {
     const outcome = await prompt();
     if (outcome === 'accepted') {
-      toast.success('Installing Apex Golf Academy…');
+      toast.success('Installing Margea Golf Academy…');
       onOpenChange(false);
     }
   };
@@ -111,7 +111,7 @@ export function InstallAppModal({ open, onOpenChange }: InstallAppModalProps) {
               n={3}
               icon={<Check className="h-5 w-5 text-gold-accent" />}
               title='Tap "Add"'
-              detail="The Apex icon will appear on your Home Screen."
+              detail="The Margea icon will appear on your Home Screen."
             />
             <p className="text-xs text-ivory/50 pt-1">
               Note: works in Safari only. Open this page in Safari if you're using Chrome on iOS.
@@ -145,7 +145,7 @@ export function InstallAppModal({ open, onOpenChange }: InstallAppModalProps) {
               n={2}
               icon={<Download className="h-5 w-5 text-gold-accent" />}
               title='Tap "Install app" or "Add to Home screen"'
-              detail="Confirm to add Apex Golf Academy to your phone."
+              detail="Confirm to add Margea Golf Academy to your phone."
             />
           </TabsContent>
 
