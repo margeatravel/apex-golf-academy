@@ -16,9 +16,9 @@ const corsHeaders = {
 
 // Configuration
 const SITE_NAME = "SC golf academy"
-const SENDER_DOMAIN = "notify.apexgolf.com.mx"
-const ROOT_DOMAIN = "apexgolf.com.mx"
-const FROM_DOMAIN = "apexgolf.com.mx"
+const SENDER_DOMAIN = "notify.margeagolfacademy.com"
+const ROOT_DOMAIN = "margeagolfacademy.com"
+const FROM_DOMAIN = "margeagolfacademy.com"
 const SITE_URL = `https://${ROOT_DOMAIN}`
 
 // Template mapping for preview mode

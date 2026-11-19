@@ -249,7 +249,7 @@ function CoachManagementSectionInner() {
             <div className="space-y-1.5">
               <Label className="text-xs text-ivory/70">Email</Label>
               <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-                placeholder="coach@apexgolf.com.mx" className="h-9 bg-white/5 border-white/10 text-ivory text-sm" />
+                placeholder="coach@margeagolfacademy.com" className="h-9 bg-white/5 border-white/10 text-ivory text-sm" />
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs text-ivory/70">Nombre completo</Label>

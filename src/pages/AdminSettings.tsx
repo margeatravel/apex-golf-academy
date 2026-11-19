@@ -1595,7 +1595,7 @@ function EmailDomainSection() {
       <SectionHeader icon={Mail} title="Email Sending Domain" subtitle="Resend domain status and DNS checklist" />
       <Separator className="bg-white/10" />
       <p style={{ color: '#E8D5B0', opacity: 0.6, fontSize: 13 }}>
-        Check whether mail.apexgolf.com.mx is verified in Resend and review the MX, SPF and DKIM records.
+        Check whether mail.margeagolfacademy.com is verified in Resend and review the MX, SPF and DKIM records.
       </p>
       <Button
         onClick={() => navigate('/admin/email-domain')}
@@ -1774,7 +1774,7 @@ export function GoogleCalendarSyncSection({ data, userId }: { data: GoogleCalSet
 
 /* ── Defaults ── */
 const DEFAULT_TIMEZONE: TimezoneData = { timezone: 'America/Cancun', offset: 'UTC-5', note: 'Cancún does not observe DST.' };
-const DEFAULT_PORTAL: PortalData = { url: 'https://apexgolf.com.mx' };
+const DEFAULT_PORTAL: PortalData = { url: 'https://margeagolfacademy.com' };
 const DEFAULT_LESSON_TYPES: LessonTypeData[] = [];
 
 /* ── Student Emails ── */

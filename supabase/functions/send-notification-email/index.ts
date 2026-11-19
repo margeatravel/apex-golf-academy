@@ -12,8 +12,8 @@ import {
 
 const RESEND_API_URL = "https://api.resend.com/emails";
 const APP_URL = "https://golfproconnect.lovable.app";
-const FROM = "SC Golf Academy <admin@apexgolf.com.mx>";
-const REPLY_TO = "admin@apexgolf.com.mx";
+const FROM = "SC Golf Academy <admin@margeagolfacademy.com>";
+const REPLY_TO = "admin@margeagolfacademy.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -138,7 +138,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
       <!-- Footer -->
       <tr><td style="background:#0d2410;padding:22px 32px;text-align:center;border-top:1px solid rgba(239,159,39,0.18);">
         <p style="margin:0;color:rgba(245,240,232,0.55);font-size:12px;line-height:1.6;">
-          SC Golf Academy · <a href="mailto:admin@apexgolf.com.mx" style="color:#EF9F27;text-decoration:none;">admin@apexgolf.com.mx</a>
+          SC Golf Academy · <a href="mailto:admin@margeagolfacademy.com" style="color:#EF9F27;text-decoration:none;">admin@margeagolfacademy.com</a>
         </p>
         <p style="margin:6px 0 0;color:rgba(245,240,232,0.35);font-size:11px;">© ${new Date().getFullYear()} SC Golf Academy</p>
       </td></tr>
@@ -398,7 +398,7 @@ function buildLessonIcs(opts: {
   const dtStamp = toIcsUtc(new Date());
   // Stable UID — same lesson date+time produces the same UID so future
   // update/cancel emails can replace this event in the user's calendar.
-  const uid = `apex-lesson-${opts.lessonDate}-${time.replace(/:/g, "")}@apexgolf.com.mx`;
+  const uid = `apex-lesson-${opts.lessonDate}-${time.replace(/:/g, "")}@margeagolfacademy.com`;
   const typeSuffix = opts.lessonType ? ` (${opts.lessonType})` : "";
   const summary = `Lesson with your Coach · Apex Golf Academy${typeSuffix}`;
   const description =

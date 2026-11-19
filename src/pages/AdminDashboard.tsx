@@ -64,7 +64,7 @@ import { ensureLessonRowId, removeLessonFromCalendar } from '@/lib/materializeRe
 
 
 const APP_TIMEZONE = 'America/Cancun';
-const STUDENT_PORTAL_URL = 'https://apexgolf.com.mx';
+const STUDENT_PORTAL_URL = 'https://margeagolfacademy.com';
 
 function getStatusStyle(status: string) {
   switch (status) {

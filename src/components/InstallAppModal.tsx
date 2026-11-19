@@ -47,7 +47,7 @@ export function InstallAppModal({ open, onOpenChange }: InstallAppModalProps) {
 
   const handleCopyLink = async () => {
     try {
-      await navigator.clipboard.writeText('https://apexgolf.com.mx');
+      await navigator.clipboard.writeText('https://margeagolfacademy.com');
       toast.success('Link copied — open it on your phone');
     } catch {
       toast.error('Could not copy link');
@@ -155,7 +155,7 @@ export function InstallAppModal({ open, onOpenChange }: InstallAppModalProps) {
               and send it to yourself, or scan a QR code from the address bar.
             </p>
             <div className="rounded-lg border border-white/10 bg-white/5 p-3 text-xs text-ivory/70 break-all">
-              https://apexgolf.com.mx
+              https://margeagolfacademy.com
             </div>
             <Button
               onClick={handleCopyLink}

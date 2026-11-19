@@ -18,7 +18,7 @@ import { demoCoachProfile, demoCoachCode, demoAccessCode } from '@/data/demoData
 import ApexBrand from '@/components/ApexBrand';
 import { Inbox } from 'lucide-react';
 
-const STUDENT_SITE_URL = 'https://apexgolf.com.mx';
+const STUDENT_SITE_URL = 'https://margeagolfacademy.com';
 
 interface MobileMenuProps {
   isCoach: boolean;

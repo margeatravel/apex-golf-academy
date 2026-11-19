@@ -3,8 +3,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getStudentEmailSettings, bccList } from "../_shared/student-email-settings.ts";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
-const FROM = "SC Golf Academy <admin@apexgolf.com.mx>";
-const REPLY_TO = "admin@apexgolf.com.mx";
+const FROM = "SC Golf Academy <admin@margeagolfacademy.com>";
+const REPLY_TO = "admin@margeagolfacademy.com";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -108,7 +108,7 @@ ${preheader ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;c
       </td></tr>
       <tr><td style="background:#0d2410;padding:22px 32px;text-align:center;border-top:1px solid rgba(239,159,39,0.18);">
         <p style="margin:0;color:rgba(245,240,232,0.55);font-size:12px;line-height:1.6;">
-          SC Golf Academy · <a href="mailto:admin@apexgolf.com.mx" style="color:#EF9F27;text-decoration:none;">admin@apexgolf.com.mx</a>
+          SC Golf Academy · <a href="mailto:admin@margeagolfacademy.com" style="color:#EF9F27;text-decoration:none;">admin@margeagolfacademy.com</a>
         </p>
         <p style="margin:6px 0 0;color:rgba(245,240,232,0.35);font-size:11px;">© ${new Date().getFullYear()} SC Golf Academy</p>
       </td></tr>
@@ -146,7 +146,7 @@ function buildHtml(name: string, dateLabel: string, timeLabel: string, note?: st
       cardRow("Coach", "Santi"),
     bodyHtml: noteHtml,
     ctaText: "Ver mis clases",
-    ctaHref: "https://apexgolf.com.mx/lessons",
+    ctaHref: "https://margeagolfacademy.com/lessons",
     closingHtml: "Por favor contacta a tu Coach para reagendar tu clase. Gracias por tu comprensión.",
   });
 }

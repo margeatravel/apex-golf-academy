@@ -11,8 +11,8 @@ const SCOPE_LABELS: Record<string, string> = Object.fromEntries(
   STAFF_ACCESS_AREAS.map(area => [area.id, area.label]),
 );
 
-const FROM_EMAIL = "Apex Golf Academy <admin@apexgolf.com.mx>";
-const APP_URL = "https://apexgolf.com.mx";
+const FROM_EMAIL = "Apex Golf Academy <admin@margeagolfacademy.com>";
+const APP_URL = "https://margeagolfacademy.com";
 const RESEND_API_URL = "https://api.resend.com/emails";
 
 async function sendStaffWelcomeEmail(

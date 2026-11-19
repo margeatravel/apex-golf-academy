@@ -27,7 +27,7 @@ import { demoCoachProfile } from '@/data/demoData';
 import { toast } from 'sonner';
 import { Inbox } from 'lucide-react';
 
-const STUDENT_PORTAL_URL = 'https://apexgolf.com.mx';
+const STUDENT_PORTAL_URL = 'https://margeagolfacademy.com';
 
 // Each nav item is gated by a scope. Admins see everything; staff see only
 // the items whose scope they were granted on the Staff Access page.

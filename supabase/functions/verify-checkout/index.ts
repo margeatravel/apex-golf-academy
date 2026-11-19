@@ -185,7 +185,7 @@ serve(async (req) => {
             await supabaseAdmin.from("notifications").insert(rows);
           }
 
-          // Email admin@apexgolf.com.mx — package purchased (non-blocking)
+          // Email admin@margeagolfacademy.com — package purchased (non-blocking)
           try {
             await supabaseAdmin.functions.invoke("notify-admin", {
               body: {
@@ -203,7 +203,7 @@ serve(async (req) => {
             logStep("notify-admin (package_purchased) failed", { error: String(e) });
           }
 
-          // Email admin@apexgolf.com.mx — payment received (non-blocking)
+          // Email admin@margeagolfacademy.com — payment received (non-blocking)
           try {
             await supabaseAdmin.functions.invoke("notify-admin", {
               body: {
@@ -259,7 +259,7 @@ serve(async (req) => {
         entitlementResult = { analysis_request_id: ar.id };
         logStep("Analysis request created", { id: ar.id });
 
-        // Email admin@apexgolf.com.mx — payment received for video analysis
+        // Email admin@margeagolfacademy.com — payment received for video analysis
         try {
           const { data: studentProf } = await supabaseAdmin
             .from("profiles")

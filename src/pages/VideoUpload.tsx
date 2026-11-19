@@ -349,7 +349,7 @@ export default function VideoUpload() {
           }
         }
 
-        // Single canonical admin notification to admin@apexgolf.com.mx
+        // Single canonical admin notification to admin@margeagolfacademy.com
         try {
           await supabase.functions.invoke('notify-admin', {
             body: {

@@ -818,7 +818,7 @@ export function generateScoringReport({
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(150, 150, 150);
-    doc.text('Apex Golf Academy   ·   apexgolf.com.mx', MARGIN, H - 20);
+    doc.text('Apex Golf Academy   ·   margeagolfacademy.com', MARGIN, H - 20);
     doc.text(`Page ${p} of ${pageCount}`, W - MARGIN, H - 20, { align: 'right' });
   }
 

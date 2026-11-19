@@ -535,7 +535,7 @@ export function VideoUploadFAB() {
         console.warn('Student analysis-submitted email failed:', emailErr);
       }
 
-      // (b) Email admin@apexgolf.com.mx — single canonical "video uploaded for analysis"
+      // (b) Email admin@margeagolfacademy.com — single canonical "video uploaded for analysis"
       try {
         await supabase.functions.invoke('notify-admin', {
           body: {

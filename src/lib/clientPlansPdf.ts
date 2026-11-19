@@ -111,7 +111,7 @@ export async function createClientPlansPdf(): Promise<Blob> {
     doc.setFontSize(18); doc.setTextColor(...palette.ivory); doc.text(section, margin, 82);
     doc.setDrawColor(...palette.edge); doc.setLineWidth(0.5); doc.line(margin, 96, width - margin, 96);
     doc.setFontSize(8); doc.setTextColor(...palette.muted);
-    doc.text('apexgolf.com.mx', margin, height - 22);
+    doc.text('margeagolfacademy.com', margin, height - 22);
     doc.text(String(page).padStart(2, '0'), width - margin, height - 22, { align: 'right' });
     y = 112;
   };

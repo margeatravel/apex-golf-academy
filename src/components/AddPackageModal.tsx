@@ -179,7 +179,7 @@ export function AddPackageModal({ open, onOpenChange, onPackageAdded, preselecte
           await supabase.from('notifications').insert(rows);
         }
 
-        // Email admin@apexgolf.com.mx — package purchased (non-blocking)
+        // Email admin@margeagolfacademy.com — package purchased (non-blocking)
         try {
           await supabase.functions.invoke('notify-admin', {
             body: {

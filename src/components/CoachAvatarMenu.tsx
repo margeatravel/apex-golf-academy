@@ -37,7 +37,7 @@ import { LanguageToggle } from '@/components/LanguageToggle';
 import { replayTour } from '@/components/GuidedTour';
 import { supabase } from '@/integrations/supabase/client';
 
-const STUDENT_PORTAL_URL = 'https://apexgolf.com.mx';
+const STUDENT_PORTAL_URL = 'https://margeagolfacademy.com';
 
 const initialsOf = (name?: string | null, email?: string | null) => {
   const src = (name || email || '').trim();

@@ -7,8 +7,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const FROM = "Apex Golf Academy <admin@apexgolf.com.mx>";
-const APP_URL = "https://apexgolf.com.mx";
+const FROM = "Apex Golf Academy <admin@margeagolfacademy.com>";
+const APP_URL = "https://margeagolfacademy.com";
 const RESEND_API_URL = "https://api.resend.com/emails";
 
 function json(body: unknown, status = 200) {

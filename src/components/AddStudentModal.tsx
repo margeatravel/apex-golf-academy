@@ -228,7 +228,7 @@ export function AddStudentModal({ open, onOpenChange, onStudentCreated }: AddStu
           }
         }
 
-        // Notify admin@apexgolf.com.mx — package purchased (non-blocking)
+        // Notify admin@margeagolfacademy.com — package purchased (non-blocking)
         try {
           await supabase.functions.invoke('notify-admin', {
             body: {

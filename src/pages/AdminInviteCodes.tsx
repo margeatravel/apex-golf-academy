@@ -181,7 +181,7 @@ export default function AdminInviteCodes() {
 
   async function handleCopy(code: string) {
     try {
-      const url = `https://apexgolf.com.mx/auth?ref=${code}`;
+      const url = `https://margeagolfacademy.com/auth?ref=${code}`;
       await navigator.clipboard.writeText(url);
       setCopied(code);
       toast.success('Invite link copied');

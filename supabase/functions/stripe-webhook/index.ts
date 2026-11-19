@@ -565,7 +565,7 @@ serve(async (req) => {
                   logStep("Failed to create admin notifications", { error: String(notifErr) });
                 }
 
-                // Email admin@apexgolf.com.mx
+                // Email admin@margeagolfacademy.com
                 await notifyAdmin({
                   eventType: "package_purchased",
                   studentName: student.full_name || student.email || "A student",

@@ -293,7 +293,7 @@ export function PackageLessonsModal({ open, onOpenChange, pkg, studentId, onChan
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(...MUTED);
-          doc.text('Tu precio se mantiene mientras sigas suscrito · apexgolf.com.mx', margin + 14, by + 28);
+          doc.text('Tu precio se mantiene mientras sigas suscrito · margeagolfacademy.com', margin + 14, by + 28);
           const chipGap = 8;
           const cw = (w - 28 - chipGap) / 2;
           list.forEach((p: any, i: number) => {

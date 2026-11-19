@@ -47,8 +47,8 @@ export default function PrivacyPolicy() {
               El responsable del tratamiento de tus datos personales es <strong>Apex Golf Academy</strong>,
               con domicilio en Puerto Cancún, Cancún, Quintana Roo, México. Para cualquier asunto
               relacionado con este aviso puedes escribirnos a{' '}
-              <a href="mailto:admin@apexgolf.com.mx" className="text-gold-accent hover:underline">
-                admin@apexgolf.com.mx
+              <a href="mailto:admin@margeagolfacademy.com" className="text-gold-accent hover:underline">
+                admin@margeagolfacademy.com
               </a>.
             </p>
           </section>
@@ -118,8 +118,8 @@ export default function PrivacyPolicy() {
             <p className="text-sm leading-relaxed text-ivory/80">
               Puedes solicitar el acceso, la corrección o la eliminación de tus datos personales en
               cualquier momento escribiéndonos a{' '}
-              <a href="mailto:admin@apexgolf.com.mx" className="text-gold-accent hover:underline">
-                admin@apexgolf.com.mx
+              <a href="mailto:admin@margeagolfacademy.com" className="text-gold-accent hover:underline">
+                admin@margeagolfacademy.com
               </a>
               . Atenderemos tu solicitud a la brevedad y te confirmaremos cuando se haya completado.
             </p>

@@ -2,8 +2,8 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
 const RESEND_API_URL = "https://api.resend.com/emails";
-const ADMIN_EMAIL = "admin@apexgolf.com.mx";
-const FROM = "SC Golf Academy <admin@apexgolf.com.mx>";
+const ADMIN_EMAIL = "admin@margeagolfacademy.com";
+const FROM = "SC Golf Academy <admin@margeagolfacademy.com>";
 const APP_URL = "https://golfproconnect.lovable.app";
 const TZ = "America/Cancun"; // UTC-5, no DST
 
@@ -621,7 +621,7 @@ serve(async (req: Request): Promise<Response> => {
         to: [ADMIN_EMAIL],
         subject: built.subject,
         html,
-        bcc: ["admin@apexgolf.com.mx"],
+        bcc: ["admin@margeagolfacademy.com"],
       }),
     });
     const data = await response.json();

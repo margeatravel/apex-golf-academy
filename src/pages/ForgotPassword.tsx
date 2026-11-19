@@ -22,7 +22,7 @@ const emailSchema = z.string().email('Please enter a valid email address');
 // the email lands on a stable, allow-listed URL. Otherwise Supabase Auth
 // falls back to the project's Site URL (a Lovable preview URL), which is
 // what was happening before.
-const PRODUCTION_RESET_URL = 'https://apexgolf.com.mx/auth/reset';
+const PRODUCTION_RESET_URL = 'https://margeagolfacademy.com/auth/reset';
 const getResetUrl = () => PRODUCTION_RESET_URL;
 
 export default function ForgotPassword() {

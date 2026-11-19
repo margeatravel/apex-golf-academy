@@ -5,9 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const APP_URL = "https://apexgolf.com.mx";
+const APP_URL = "https://margeagolfacademy.com";
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
-const FROM = "SC Golf Academy <admin@apexgolf.com.mx>";
+const FROM = "SC Golf Academy <admin@margeagolfacademy.com>";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -289,8 +289,8 @@ Deno.serve(async (req) => {
             to: [recipientEmail],
             subject,
             html,
-            reply_to: "admin@apexgolf.com.mx",
-            bcc: ["admin@apexgolf.com.mx"],
+            reply_to: "admin@margeagolfacademy.com",
+            bcc: ["admin@margeagolfacademy.com"],
           }),
         });
         if (!r.ok) {

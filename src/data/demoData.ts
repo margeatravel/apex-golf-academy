@@ -92,7 +92,7 @@ const slug = (s: string) =>
 
 export const demoStudents: DemoStudent[] = STUDENT_DEFS.map((s) => ({
   id: id('std', s.n),
-  email: `${slug(s.name)}@demo.apexgolf.com.mx`,
+  email: `${slug(s.name)}@demo.margeagolfacademy.com`,
   full_name: s.name,
   phone: `+52 998 ${String(1000000 + s.n * 7331).slice(0, 7)}`,
   photo_url: null,
@@ -207,18 +207,18 @@ const SUB_DEFS = [
   // Apex subscribers — must map to existing demo students with plan: 'apex'
   // so they appear matched in the Subscribers tab AND inherit the apex tier
   // tint in the recurring/live calendar (both already schedule these IDs).
-  { name: 'Gabriela Flores', email: 'gabriela.flores@demo.apexgolf.com.mx', tier: 'apex',    amount: 14999, months: 14 },
-  { name: 'Mariana Soto',    email: 'mariana.soto@demo.apexgolf.com.mx',    tier: 'apex',    amount: 14999, months: 11 },
-  { name: 'Sofía Ramírez',   email: 'sofia.ramirez@demo.apexgolf.com.mx',   tier: 'pro',     amount: 999,   months: 6  },
-  { name: 'Jorge Herrera',   email: 'jorge.herrera@demo.apexgolf.com.mx',   tier: 'pro',     amount: 999,   months: 8  },
-  { name: 'Andrés Morales',  email: 'andres.morales@demo.apexgolf.com.mx',  tier: 'scratch', amount: 599,   months: 3  },
-  { name: 'Fernando Díaz',   email: 'fernando.diaz@demo.apexgolf.com.mx',   tier: 'scratch', amount: 599,   months: 2  },
+  { name: 'Gabriela Flores', email: 'gabriela.flores@demo.margeagolfacademy.com', tier: 'apex',    amount: 14999, months: 14 },
+  { name: 'Mariana Soto',    email: 'mariana.soto@demo.margeagolfacademy.com',    tier: 'apex',    amount: 14999, months: 11 },
+  { name: 'Sofía Ramírez',   email: 'sofia.ramirez@demo.margeagolfacademy.com',   tier: 'pro',     amount: 999,   months: 6  },
+  { name: 'Jorge Herrera',   email: 'jorge.herrera@demo.margeagolfacademy.com',   tier: 'pro',     amount: 999,   months: 8  },
+  { name: 'Andrés Morales',  email: 'andres.morales@demo.margeagolfacademy.com',  tier: 'scratch', amount: 599,   months: 3  },
+  { name: 'Fernando Díaz',   email: 'fernando.diaz@demo.margeagolfacademy.com',   tier: 'scratch', amount: 599,   months: 2  },
 ];
 
 // 7th subscription: a canceled scratch subscriber so the Subscribers tab
 // has Active:6, Canceled:1, Total:7 KPIs.
 const SUB_DEFS_CANCELED = [
-  { name: 'Patricia Núñez',  email: 'patricia.nunez@demo.apexgolf.com.mx',  tier: 'scratch', amount: 599,   months: 4 },
+  { name: 'Patricia Núñez',  email: 'patricia.nunez@demo.margeagolfacademy.com',  tier: 'scratch', amount: 599,   months: 4 },
 ];
 
 const buildSub = (s: typeof SUB_DEFS[number], i: number, canceled = false): DemoSubscription => {
@@ -684,13 +684,13 @@ export const demoSubscriptionPlanPrices = {
 export const demoCoachProfile = {
   full_name: 'Coach Demo',
   initials: 'CD',
-  email: 'coach.demo@apexgolf.com.mx',
+  email: 'coach.demo@margeagolfacademy.com',
   photo_url: null as string | null,
 };
 
 export const demoCoachCode = 'DEMO0000';
 export const demoAccessCode = 'DEMO0001';
-export const demoSiteLink = 'demo.apexgolf.com.mx';
+export const demoSiteLink = 'demo.margeagolfacademy.com';
 
 // ── FREE TRIAL SETTINGS ─────────────────────────────────────────────────────
 export const demoFreeTrialDefaultDays = 30;

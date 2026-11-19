@@ -36,7 +36,7 @@ interface Props {
   prefetchedCode?: string | null;
 }
 
-const APP_URL = 'https://apexgolf.com.mx';
+const APP_URL = 'https://margeagolfacademy.com';
 
 export function InviteFriendModal({
   open,
