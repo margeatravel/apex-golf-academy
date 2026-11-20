@@ -62,6 +62,55 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
+    // Authorization: accept (a) the service role key (manual/admin calls),
+    // (b) the internal cron token stored in public.internal_cron_tokens
+    // (pg_cron), or (c) a signed-in admin/coach user JWT — the admin UI
+    // (AssignSpotModal) calls this function with the coach's session token,
+    // so staff JWTs must be accepted here. Without this check, anyone on
+    // the internet could trigger lesson generation.
+    // NOTE: this function runs with verify_jwt = false (see config.toml) so
+    // the pg_cron bearer token (not a JWT) reaches this code.
+    // Same pattern as send-daily-lesson-reminders/index.ts.
+    const authHeader = req.headers.get("Authorization") || "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    let authorized = authHeader === `Bearer ${serviceKey}`;
+    if (!authorized && authHeader.startsWith("Bearer ")) {
+      const presented = authHeader.slice(7).trim();
+      if (presented) {
+        const { data: tokenRow } = await supabase
+          .from("internal_cron_tokens")
+          .select("token")
+          .eq("name", "generate_recurring_lessons")
+          .maybeSingle();
+        if (tokenRow?.token && tokenRow.token === presented) authorized = true;
+      }
+    }
+    // (c) Staff user JWT: validate the session and require an admin/coach role.
+    if (!authorized && authHeader.startsWith("Bearer ")) {
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+      const userClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        anonKey,
+        { global: { headers: { Authorization: authHeader } } },
+      );
+      const { data: userData } = await userClient.auth.getUser();
+      if (userData?.user) {
+        const { data: roleRow } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", userData.user.id)
+          .in("role", ["admin", "coach"])
+          .maybeSingle();
+        if (roleRow) authorized = true;
+      }
+    }
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     let studentId: string | null = null;
     let includeNoPackage = false;
     let materializeSlotId: string | null = null;
