@@ -241,7 +241,7 @@ serve(async (req) => {
       logStep("Found existing customer", { customerId });
     }
 
-    const origin = req.headers.get("origin") || "https://lovable.dev";
+    const origin = req.headers.get("origin") || "https://www.margeagolfacademy.com";
     const checkoutMode = mode === "payment" ? "payment" : "subscription";
     
     // Always include student identification metadata

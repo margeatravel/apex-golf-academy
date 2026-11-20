@@ -1,10 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { disconnectAppUser } from "../_shared/appUserConnector.ts";
-import { deleteConnectionKeyForUser, getConnectionKeyForUser } from "../_shared/appUserConnections.ts";
-
-const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
-const CONNECTOR_ID = "google_calendar";
+import { getStoredTokens, revokeConnection } from "../_shared/googleCalendarDirect.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -26,15 +22,12 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return json({ error: "Sign in required" }, 401);
 
-    const connectionAPIKey = await getConnectionKeyForUser(user.id, CONNECTOR_ID);
-    if (!connectionAPIKey) return json({ ok: true, alreadyDisconnected: true });
+    // Sin fila guardada (o fila vieja que ya no sirve): nada que revocar.
+    const stored = await getStoredTokens(user.id);
+    if (!stored) return json({ ok: true, alreadyDisconnected: true });
 
-    await disconnectAppUser({
-      gatewayBaseUrl: GATEWAY_BASE_URL,
-      connectionAPIKey,
-      connectorId: CONNECTOR_ID,
-    });
-    await deleteConnectionKeyForUser(user.id, CONNECTOR_ID);
+    // Revoca en Google (best effort) y borra la fila guardada.
+    await revokeConnection(user.id);
     return json({ ok: true });
   } catch (error) {
     console.error("google-calendar-disconnect failed:", error);

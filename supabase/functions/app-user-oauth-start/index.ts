@@ -1,11 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { authorizeAppUserOAuth } from "../_shared/appUserConnector.ts";
-import { getConnectionKeyForUser } from "../_shared/appUserConnections.ts";
-import { GOOGLE_CALENDAR_SCOPES } from "../_shared/appUserScopes.ts";
+import { buildAuthUrl } from "../_shared/googleCalendarDirect.ts";
 
-const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
-const CONNECTOR_ID = "google_calendar";
+// OAuth 2.0 directo contra Google (sin Connector Gateway de Lovable).
+// Construye la URL de autorización y devuelve también el `state` generado,
+// para que el frontend lo guarde en sessionStorage y la página de retorno
+// lo verifique (protección CSRF). GoogleCalendarConnect ignora el campo
+// `state` extra; la verificación vive en GoogleCalendarReturn.tsx.
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -25,10 +26,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const clientAPIKey = Deno.env.get("GOOGLE_CALENDAR_APP_USER_CONNECTOR_CLIENT_API_KEY");
-    if (!clientAPIKey) {
+    if (!Deno.env.get("GOOGLE_OAUTH_CLIENT_ID")) {
       return new Response(
-        JSON.stringify({ error: "GOOGLE_CALENDAR_APP_USER_CONNECTOR_CLIENT_API_KEY is not set" }),
+        JSON.stringify({ error: "GOOGLE_OAUTH_CLIENT_ID is not set" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -42,21 +42,9 @@ Deno.serve(async (req) => {
     }
     const returnUrl = new URL("/oauth/google-calendar/return", origin).toString();
 
-    // Reconnect: pass the stored lovack_* so the gateway can confirm ownership.
-    const connectionAPIKey = await getConnectionKeyForUser(user.id, CONNECTOR_ID);
-
-    const { authorizationUrl } = await authorizeAppUserOAuth({
-      gatewayBaseUrl: GATEWAY_BASE_URL,
-      connectorId: CONNECTOR_ID,
-      appUserId: user.id,
-      clientAPIKey,
-      returnUrl,
-      connectionAPIKey: connectionAPIKey ?? undefined,
-      credentialsConfiguration: {
-        scopes: GOOGLE_CALENDAR_SCOPES,
-      },
-    });
-    return new Response(JSON.stringify({ authorizationUrl }), {
+    const state = crypto.randomUUID();
+    const authorizationUrl = buildAuthUrl(returnUrl, state);
+    return new Response(JSON.stringify({ authorizationUrl, state }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {

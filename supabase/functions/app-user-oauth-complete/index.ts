@@ -1,10 +1,14 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { exchangeAppUserOAuthCode } from "../_shared/appUserConnector.ts";
-import { saveConnectionKeyForUser } from "../_shared/appUserConnections.ts";
+import { exchangeCode, saveTokens } from "../_shared/googleCalendarDirect.ts";
 
-const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
-const CONNECTOR_ID = "google_calendar";
+// OAuth 2.0 directo contra Google (sin Connector Gateway de Lovable).
+// Canjea el `code` del redirect por el token set y lo guarda cifrado
+// (AES-GCM) en app_user_connections vía saveTokens. El `origin` opcional
+// reconstruye la misma redirect_uri que usó app-user-oauth-start; si no
+// viene, se usa la URL de producción.
+
+const PRODUCTION_ORIGIN = "https://www.margeagolfacademy.com";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -24,25 +28,20 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { code } = await req.json();
+    const { code, origin } = await req.json();
     if (typeof code !== "string" || !code) {
       return new Response(JSON.stringify({ error: "Missing code" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+    const redirectOrigin = typeof origin === "string" && /^https?:\/\//.test(origin)
+      ? origin
+      : PRODUCTION_ORIGIN;
+    const redirectUri = new URL("/oauth/google-calendar/return", redirectOrigin).toString();
 
-    const { connectionAPIKey, connectorId } = await exchangeAppUserOAuthCode(
-      GATEWAY_BASE_URL,
-      code,
-    );
-    if (connectorId !== CONNECTOR_ID) {
-      return new Response(JSON.stringify({ error: "OAuth completion returned the wrong connector" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    await saveConnectionKeyForUser(user.id, connectorId, connectionAPIKey);
+    const tokens = await exchangeCode(code, redirectUri);
+    await saveTokens(user.id, tokens);
     return new Response(JSON.stringify({ ok: true }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

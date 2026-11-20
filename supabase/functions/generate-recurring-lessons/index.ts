@@ -62,6 +62,33 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
     );
 
+    // Authorization: accept the service role key (manual/admin calls) or the
+    // internal cron token stored in public.internal_cron_tokens (pg_cron).
+    // NOTE: this function runs with verify_jwt = false (ver config.toml) so
+    // the pg_cron bearer token (not a JWT) reaches this code. Without this
+    // check, anyone on the internet could trigger lesson generation.
+    // Same pattern as send-daily-lesson-reminders/index.ts.
+    const authHeader = req.headers.get("Authorization") || "";
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    let authorized = authHeader === `Bearer ${serviceKey}`;
+    if (!authorized && authHeader.startsWith("Bearer ")) {
+      const presented = authHeader.slice(7).trim();
+      if (presented) {
+        const { data: tokenRow } = await supabase
+          .from("internal_cron_tokens")
+          .select("token")
+          .eq("name", "generate_recurring_lessons")
+          .maybeSingle();
+        if (tokenRow?.token && tokenRow.token === presented) authorized = true;
+      }
+    }
+    if (!authorized) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     let studentId: string | null = null;
     let includeNoPackage = false;
     let materializeSlotId: string | null = null;

@@ -1,11 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { appUserReconnectRequired, callAsAppUser } from "../_shared/appUserConnector.ts";
-import { getConnectionKeyForUser } from "../_shared/appUserConnections.ts";
-import { GOOGLE_CALENDAR_SCOPES } from "../_shared/appUserScopes.ts";
+import { callGoogleCalendar, getStoredTokens } from "../_shared/googleCalendarDirect.ts";
 
-const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
-const CONNECTOR_ID = "google_calendar";
 const TZ = "America/Cancun";
 const DAYS_AHEAD = 90;
 const TIME_BUDGET_MS = 110000;
@@ -98,16 +94,25 @@ async function runQueued(admin: any, userId: string) {
 async function syncUser(admin: any, userId: string): Promise<Record<string, unknown>> {
   const user = { id: userId };
   {
-    const key = await getConnectionKeyForUser(user.id, CONNECTOR_ID);
-    if (!key) return { error: "not_connected", status: 400 };
+    // Sin token set guardado (o fila vieja que ya no sirve): no conectado.
+    const stored = await getStoredTokens(user.id);
+    if (!stored?.refresh_token) return { error: "not_connected", status: 400 };
     const today = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
     const until = new Date(Date.now() + DAYS_AHEAD * 86400000).toISOString().slice(0, 10);
 
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    // callGoogleCalendar pone reconnectRequired cuando Google rechaza el
+    // refresh con invalid_grant (usuario revocó → hay que re-vincular).
+    // Se guarda en esta variable porque `call` devuelve solo el Response.
+    let reconnectNeeded = false;
     const call = async (path: string, init?: RequestInit) => {
       for (let attempt = 0; ; attempt++) {
         await sleep(200);
-        const r = await callAsAppUser({ gatewayBaseUrl: GATEWAY_BASE_URL, connectionAPIKey: key, connectorId: CONNECTOR_ID, path, init, requiredScopes: GOOGLE_CALENDAR_SCOPES });
+        const { res: r, reconnectRequired } = await callGoogleCalendar(user.id, path, init);
+        if (reconnectRequired) {
+          reconnectNeeded = true;
+          return r;
+        }
         if ((r.status === 403 || r.status === 429) && attempt < 4) {
           const t = await r.clone().text();
           if (/rateLimit|Rate Limit/i.test(t)) { await sleep(1000 * 2 ** attempt); continue; }
@@ -184,7 +189,7 @@ async function syncUser(admin: any, userId: string): Promise<Record<string, unkn
       const qs = new URLSearchParams({ timeMin, timeMax, singleEvents: "true", maxResults: "2500", showDeleted: "false" });
       if (pageToken) qs.set("pageToken", pageToken);
       const r = await call(`/calendar/v3/calendars/primary/events?${qs}`);
-      if (await appUserReconnectRequired(r.clone())) return { error: "reconnect_required", status: 401 };
+      if (reconnectNeeded) return { error: "reconnect_required", status: 401 };
       if (!r.ok) {
         const body = await r.text();
         console.error(`List events failed [${r.status}]: ${body}`);

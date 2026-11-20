@@ -5,7 +5,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const APP_ORIGIN = "https://golfproconnect.lovable.app";
+const APP_ORIGIN = "https://www.margeagolfacademy.com";
 const SITE_NAME = "Margea Golf Academy";
 const FALLBACK_IMAGE = `${APP_ORIGIN}/share-cover.jpg`;
 

@@ -1,25 +1,28 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.95.0';
 import { corsHeaders } from 'https://esm.sh/@supabase/supabase-js@2.95.0/cors';
+import { callGoogleCalendar, getStoredTokens } from '../_shared/googleCalendarDirect.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
-const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const GCAL_API_KEY = Deno.env.get('GOOGLE_CALENDAR_API_KEY_1');
-const GATEWAY_URL = 'https://connector-gateway.lovable.dev/google_calendar/calendar/v3';
 
 /**
- * Coach-side Google Calendar sync.
+ * Coach-side Google Calendar sync — OPCIÓN A (ver DESIGN.md §5):
+ * usa la conexión por usuario del coach (la misma que
+ * sync-my-google-calendar), leída con getConnectionKeyForUser +
+ * callGoogleCalendar. NO hay cuenta de servicio ni llave de Lovable.
+ * Si el coach no tiene el calendario conectado, cada acción devuelve
+ * un resultado `not_connected` claro y nunca revienta al llamador
+ * (book-lesson / cancel-lesson la llaman fire-and-forget).
  *
- * Actions (all mutate Coach Santi's Google Calendar via the Lovable connector
- * gateway, which handles OAuth token refresh transparently):
+ * Actions (all mutate the coach's Google Calendar):
  *
  *   - "create"   { lessonId }            → creates an event, stores its id on lessons.google_calendar_event_id
  *   - "update"   { lessonId }            → patches the existing event (or creates if missing)
  *   - "delete"   { lessonId }            → deletes the event from Google Calendar
  *   - "delete_event_id" { eventId }      → low-level: delete by event id (used after row already deleted)
  *   - "test"                             → verifies credentials + lists calendars (used by admin "Connect" button)
- *   - "backfill"                         → push all upcoming scheduled lessons to Santi's calendar
+ *   - "backfill"                         → push all upcoming scheduled lessons to the coach's calendar
  *
  * The function is a no-op (returns { skipped: 'sync_disabled' }) unless the
  * academy_settings.google_calendar_sync.enabled flag is true.
@@ -83,19 +86,57 @@ function buildEventBody(lesson: any, studentName: string) {
   };
 }
 
-async function gcalFetch(path: string, init: RequestInit = {}) {
-  if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY is not configured');
-  if (!GCAL_API_KEY) throw new Error('GOOGLE_CALENDAR_API_KEY_1 is not configured');
-  const res = await fetch(`${GATEWAY_URL}${path}`, {
+/**
+ * Llama a la Google Calendar API como el coach (usuario `userId`).
+ * `path` es el path corto que usaba el gateway, p. ej.
+ * `/calendars/primary/events`; aquí se le antepone `/calendar/v3`.
+ * Si el token fue revocado, devuelve un 401 sintético con
+ * `reconnect_required` para que el llamador lo reporte igual que
+ * cualquier otro fallo del proveedor.
+ */
+async function gcalFetchForUser(userId: string, path: string, init: RequestInit = {}) {
+  const headers = new Headers(init.headers);
+  if (!headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  const { res, reconnectRequired } = await callGoogleCalendar(userId, `/calendar/v3${path}`, {
     ...init,
-    headers: {
-      'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-      'X-Connection-Api-Key': GCAL_API_KEY,
-      'Content-Type': 'application/json',
-      ...(init.headers ?? {}),
-    },
+    headers,
   });
+  if (reconnectRequired) {
+    return new Response(JSON.stringify({ error: 'reconnect_required' }), { status: 401 });
+  }
   return res;
+}
+
+function notConnected() {
+  return new Response(
+    JSON.stringify({
+      ok: false,
+      error: 'not_connected',
+      detail: 'Coach Google Calendar is not connected. Reconnect it from the profile.',
+    }),
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } },
+  );
+}
+
+/**
+ * Resuelve de quién es la conexión de Google a usar (opción A):
+ * el coach de la clase (lesson.coach_id), el evento (buscando la clase
+ * por google_calendar_event_id) o, si no hay clase, el llamador
+ * autenticado. Devuelve null si no hay de dónde sacarlo.
+ */
+async function resolveCoachUserId(
+  admin: ReturnType<typeof createClient>,
+  opts: { lessonId?: string; eventId?: string; callerId?: string | null },
+): Promise<string | null> {
+  if (opts.lessonId) {
+    const { data } = await admin.from('lessons').select('coach_id').eq('id', opts.lessonId).maybeSingle();
+    if (data?.coach_id) return data.coach_id as string;
+  }
+  if (opts.eventId) {
+    const { data } = await admin.from('lessons').select('coach_id').eq('google_calendar_event_id', opts.eventId).maybeSingle();
+    if (data?.coach_id) return data.coach_id as string;
+  }
+  return opts.callerId ?? null;
 }
 
 async function readSyncSettings(admin: ReturnType<typeof createClient>) {
@@ -117,7 +158,7 @@ async function readSyncSettings(admin: ReturnType<typeof createClient>) {
 async function loadLesson(admin: ReturnType<typeof createClient>, lessonId: string) {
   const { data: lesson, error } = await admin
     .from('lessons')
-    .select('id, student_id, lesson_date, lesson_time, lesson_type, duration_minutes, coach_notes, student_notes, google_calendar_event_id, status, skipped, invitee_name')
+    .select('id, coach_id, student_id, lesson_date, lesson_time, lesson_type, duration_minutes, coach_notes, student_notes, google_calendar_event_id, status, skipped, invitee_name')
     .eq('id', lessonId)
     .maybeSingle();
   if (error) throw error;
@@ -142,9 +183,10 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action ?? '');
     const token = req.headers.get('Authorization')?.replace(/^Bearer\s+/i, '');
+    let callerId: string | null = null;
     if (token !== SERVICE_KEY) {
       const { data, error } = await admin.auth.getClaims(token ?? '');
-      const callerId = data?.claims?.sub;
+      callerId = (data?.claims?.sub as string | undefined) ?? null;
       if (error || !callerId) throw new Error('Unauthorized');
       const [{ data: owner }, { data: staff }] = await Promise.all([
         admin.rpc('has_role', { _user_id: callerId, _role: 'admin' }),
@@ -155,7 +197,11 @@ Deno.serve(async (req) => {
 
     // "test" doesn't require sync to be enabled — it's the admin connect button
     if (action === 'test') {
-      const res = await gcalFetch('/users/me/calendarList?maxResults=10');
+      const coachUserId = callerId;
+      if (!coachUserId) return notConnected();
+      const stored = await getStoredTokens(coachUserId);
+      if (!stored?.refresh_token) return notConnected();
+      const res = await gcalFetchForUser(coachUserId, '/users/me/calendarList?maxResults=10');
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         return new Response(JSON.stringify({ ok: false, status: res.status, error: json }), {
@@ -183,7 +229,11 @@ Deno.serve(async (req) => {
     if (action === 'delete_event_id') {
       const eventId = body?.eventId as string | undefined;
       if (!eventId) return new Response(JSON.stringify({ error: 'eventId required' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      const res = await gcalFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
+      const coachUserId = await resolveCoachUserId(admin, { eventId, callerId });
+      if (!coachUserId) return notConnected();
+      const stored = await getStoredTokens(coachUserId);
+      if (!stored?.refresh_token) return notConnected();
+      const res = await gcalFetchForUser(coachUserId, `/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
       return new Response(JSON.stringify({ ok: res.ok || res.status === 404 || res.status === 410 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -230,7 +280,11 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const res = await gcalFetch(`/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
+      const coachUserId = (lesson?.coach_id as string | null) ?? null;
+      if (!coachUserId) return notConnected();
+      const stored = await getStoredTokens(coachUserId);
+      if (!stored?.refresh_token) return notConnected();
+      const res = await gcalFetchForUser(coachUserId, `/calendars/${calendarId}/events/${encodeURIComponent(eventId)}`, { method: 'DELETE' });
       if (res.ok || res.status === 404 || res.status === 410) {
         await admin.from('lessons').update({ google_calendar_event_id: null }).eq('id', lessonId);
       }
@@ -246,21 +300,26 @@ Deno.serve(async (req) => {
         status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+    const coachUserId = (lesson.coach_id as string | null) ?? null;
+    if (!coachUserId) return notConnected();
+    const stored = await getStoredTokens(coachUserId);
+    if (!stored?.refresh_token) return notConnected();
     const eventBody = buildEventBody(lesson, lesson._studentName);
     const existingEventId = lesson.google_calendar_event_id as string | null;
 
     let res: Response;
     if (existingEventId && (action === 'update' || action === 'create')) {
-      res = await gcalFetch(
+      res = await gcalFetchForUser(
+        coachUserId,
         `/calendars/${calendarId}/events/${encodeURIComponent(existingEventId)}`,
         { method: 'PATCH', body: JSON.stringify(eventBody) },
       );
       if (res.status === 404 || res.status === 410) {
         // Event was removed externally — fall through to create
-        res = await gcalFetch(`/calendars/${calendarId}/events`, { method: 'POST', body: JSON.stringify(eventBody) });
+        res = await gcalFetchForUser(coachUserId, `/calendars/${calendarId}/events`, { method: 'POST', body: JSON.stringify(eventBody) });
       }
     } else {
-      res = await gcalFetch(`/calendars/${calendarId}/events`, { method: 'POST', body: JSON.stringify(eventBody) });
+      res = await gcalFetchForUser(coachUserId, `/calendars/${calendarId}/events`, { method: 'POST', body: JSON.stringify(eventBody) });
     }
 
     const json = await res.json().catch(() => ({}));

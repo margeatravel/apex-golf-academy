@@ -1,11 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { corsHeaders } from "npm:@supabase/supabase-js@2/cors";
-import { appUserReconnectRequired, callAsAppUser } from "../_shared/appUserConnector.ts";
-import { getConnectionKeyForUser } from "../_shared/appUserConnections.ts";
-import { GOOGLE_CALENDAR_SCOPES } from "../_shared/appUserScopes.ts";
-
-const GATEWAY_BASE_URL = "https://connector-gateway.lovable.dev";
-const CONNECTOR_ID = "google_calendar";
+import { callGoogleCalendar, getStoredTokens } from "../_shared/googleCalendarDirect.ts";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
@@ -27,18 +22,17 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return json({ error: "Sign in required" }, 401);
 
-    const connectionAPIKey = await getConnectionKeyForUser(user.id, CONNECTOR_ID);
-    if (!connectionAPIKey) return json({ connected: false });
+    // getStoredTokens devuelve null si no hay fila o si la fila es vieja
+    // (lovack_* o cifrado con el secreto anterior): en ambos casos, no conectado.
+    const stored = await getStoredTokens(user.id);
+    if (!stored?.refresh_token) return json({ connected: false });
 
     // Read the user's primary calendar summary as a lightweight probe.
-    const res = await callAsAppUser({
-      gatewayBaseUrl: GATEWAY_BASE_URL,
-      connectionAPIKey,
-      connectorId: CONNECTOR_ID,
-      path: "/calendar/v3/users/me/calendarList?maxResults=10",
-      requiredScopes: GOOGLE_CALENDAR_SCOPES,
-    });
-    if (await appUserReconnectRequired(res)) {
+    const { res, reconnectRequired } = await callGoogleCalendar(
+      user.id,
+      "/calendar/v3/users/me/calendarList?maxResults=10",
+    );
+    if (reconnectRequired) {
       return json({ connected: false, reconnectRequired: true });
     }
     if (!res.ok) {
