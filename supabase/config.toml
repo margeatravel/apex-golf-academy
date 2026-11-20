@@ -1,4 +1,4 @@
-project_id = "rlynhhrriskauwvfczkx"
+project_id = "qitqwtuqcgyedgqcyojq"
 
 [functions]
   [functions.ai-golf-coach]
@@ -15,8 +15,6 @@ project_id = "rlynhhrriskauwvfczkx"
     verify_jwt = false
   [functions.customer-portal]
     verify_jwt = false
-  [functions.fetch-calendar-events]
-    verify_jwt = true
   [functions.notify-admin]
     verify_jwt = false
   [functions.manage-my-subscription]
@@ -36,6 +34,10 @@ project_id = "rlynhhrriskauwvfczkx"
   [functions.send-daily-lesson-reminders]
     verify_jwt = false
   [functions.send-package-completed-email]
+    verify_jwt = false
+  # pg_cron llama a esta funcion con Bearer <token de internal_cron_tokens>,
+  # que NO es un JWT: sin verify_jwt = false el gateway rechaza el cron con 401.
+  [functions.generate-recurring-lessons]
     verify_jwt = false
 
 [functions.coach-signup]
