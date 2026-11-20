@@ -74,6 +74,7 @@ export function GoogleCalendarConnect() {
       });
       if (error) throw error;
       const completion = waitForOAuthCompletion(popup);
+      if (data.state) sessionStorage.setItem('gcal_oauth_state', data.state);
       popup.location.href = data.authorizationUrl;
       await completion;
       await queryClient.invalidateQueries({ queryKey: ['google-calendar-status'] });
