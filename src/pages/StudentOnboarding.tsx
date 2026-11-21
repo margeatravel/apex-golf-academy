@@ -633,22 +633,19 @@ export default function StudentOnboarding() {
                 <h1 className="text-3xl font-bold leading-tight text-ivory">{t('onboarding.paywallTitle')}</h1>
                 <p className="text-sm text-ivory/60">{t('onboarding.paywallSubtitle')}</p>
               </div>
-              <div className="space-y-0">
-                {[
-                  { title: t('onboarding.timelineToday'), desc: t('onboarding.timelineTodayDesc'), done: true },
-                  { title: t('onboarding.timelineDay25'), desc: t('onboarding.timelineDay25Desc'), done: false },
-                  { title: t('onboarding.timelineDay30'), desc: t('onboarding.timelineDay30Desc'), done: false },
-                ].map((point, index) => (
-                  <div key={point.title} className="flex gap-3">
-                    <div className="flex w-6 flex-col items-center">
-                      <span className={`flex h-6 w-6 items-center justify-center rounded-full border ${point.done ? 'border-success bg-success text-ivory' : 'border-gold-accent/50 bg-gold-accent/10 text-gold-accent'}`}>
-                        {point.done ? <Check className="h-3.5 w-3.5" /> : <span className="text-[10px] font-bold text-gold-accent">{index + 1}</span>}
-                      </span>
-                      {index < 2 && <span className="h-9 w-px bg-border" />}
-                    </div>
-                    <div className="pb-4"><p className="text-sm font-bold text-ivory">{point.title}</p><p className="text-xs text-ivory/55">{point.desc}</p></div>
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <p className="flex items-center justify-center gap-2 text-sm font-medium text-ivory">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full border border-success bg-success text-ivory">
+                    <Check className="h-3 w-3" />
+                  </span>
+                  {t('onboarding.paywallNoCard')}
+                </p>
+                <p className="flex items-center justify-center gap-2 text-sm font-medium text-ivory">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full border border-success bg-success text-ivory">
+                    <Check className="h-3 w-3" />
+                  </span>
+                  {t('onboarding.paywallNoAutoPay')}
+                </p>
               </div>
               <Button type="button" onClick={() => void finishOnboarding()} disabled={finishing} className="h-12 w-full rounded-2xl bg-gold-accent font-bold text-accent-foreground hover:bg-gold-accent/90">
                 {finishing ? <Loader2 className="h-5 w-5 animate-spin" /> : t('onboarding.startTrial')}
