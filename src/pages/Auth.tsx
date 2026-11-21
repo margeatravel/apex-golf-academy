@@ -23,6 +23,15 @@ const authSchema = z.object({
   fullName: z.string().min(2, 'Full name must be at least 2 characters').optional(),
 });
 
+// lookup-invite is a public pre-signup edge function, but the Supabase
+// gateway enforces JWT verification on it, so a raw fetch without an
+// Authorization header gets 401 and every code looks invalid. The
+// publishable key is public and satisfies the gateway check.
+const inviteLookupHeaders = (): HeadersInit => {
+  const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+  return anonKey ? { apikey: anonKey, Authorization: `Bearer ${anonKey}` } : {};
+};
+
 export default function Auth() {
   const [searchParams] = useSearchParams();
   const { t } = useLanguage();
@@ -72,7 +81,7 @@ export default function Auth() {
         try {
           const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
           const url = `https://${projectId}.supabase.co/functions/v1/lookup-invite?code=${encodeURIComponent(refCodeFromUrl)}`;
-          const r = await fetch(url);
+          const r = await fetch(url, { headers: inviteLookupHeaders() });
           const data = await r.json();
           if (data?.valid) {
             setReferralInfo({
@@ -111,7 +120,7 @@ export default function Auth() {
     try {
       const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
       const url = `https://${projectId}.supabase.co/functions/v1/lookup-invite?code=${encodeURIComponent(code)}`;
-      const r = await fetch(url);
+      const r = await fetch(url, { headers: inviteLookupHeaders() });
       const data = await r.json();
       if (data?.valid) {
         setReferralInfo({
