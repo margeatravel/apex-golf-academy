@@ -41,6 +41,14 @@ export interface RevenueReportExtras {
     lessons: Array<{ name: string; date: string; type: string; amount: number }>;
     packages: Array<{ name: string; pkgName: string; kind: 'partial' | 'pending'; price: number; paid: number; balance: number }>;
   };
+  /** Subscriptions (from the Revenue page) — kept separate from lessons/packages. */
+  subscriptions?: {
+    activeSubscribers: number;
+    mrr: number;
+    monthIncome: number;
+    yearIncome: number;
+    monthly: Array<{ month: string; paidCount: number; total: number; active: number; started: number; canceled: number }>;
+  };
 }
 
 const BG: [number, number, number] = [13, 31, 24];
@@ -120,7 +128,7 @@ export function buildRevenueReportPdf(d: RevenueReportInput): Blob {
   doc.setFillColor(...BG); doc.setDrawColor(...GOLD); doc.setLineWidth(0.8);
   doc.roundedRect(X, 14, 16, 16, 3, 3, 'S');
   doc.setFont('helvetica', 'bold'); doc.setFontSize(16); doc.setTextColor(...GOLD);
-  doc.text('A', X + 8, 25, { align: 'center' });
+  doc.text('M', X + 8, 25, { align: 'center' });
   doc.setFontSize(20); doc.setTextColor(...IVORY);
   doc.text(t('Reporte de ingresos y horas', 'Revenue & hours report'), X + 22, 22);
   doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(...MUTED);
@@ -266,6 +274,46 @@ export function buildRevenueReportPdf(d: RevenueReportInput): Blob {
     }
     if (!ar.lessons.length && !ar.packages.length) note(t('No hay nada pendiente por cobrar.', 'Nothing pending to collect.'));
     else totalRow(t('Total por cobrar', 'Total receivable'), mxn(ar.total));
+  }
+
+  // ---- Subscriptions (from the Revenue page — separate from lessons/packages)
+  if (ex?.subscriptions) {
+    const sb = ex.subscriptions;
+    section(t('Suscripciones', 'Subscriptions'), 21);
+    const subCards: Array<[string, string]> = [
+      [t('Suscriptores activos', 'Active subscribers'), String(sb.activeSubscribers)],
+      ['MRR', mxn(sb.mrr)],
+      [t('Ingreso suscripciones · mes en curso', 'Subscription income · month to date'), mxn(sb.monthIncome)],
+      [t(`Total suscripciones ${d.year}`, `Subscription total ${d.year}`), mxn(sb.yearIncome)],
+    ];
+    const scw = (W - 2 * X - 12) / 4;
+    subCards.forEach(([label, val], i) => {
+      const cx = X + i * (scw + 4);
+      doc.setFillColor(...CARD); doc.roundedRect(cx, y, scw, 18, 2, 2, 'F');
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...MUTED);
+      doc.text(doc.splitTextToSize(label, scw - 6)[0], cx + 3, y + 6);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor(...GOLD);
+      doc.text(val, cx + 3, y + 13.5);
+    });
+    y += 24;
+    if (sb.monthly.length) {
+      table(
+        [t('Mes', 'Month'), t('Cobros pagados', 'Paid charges'), t('Total MXN', 'Total MXN'), t('Activos', 'Active'), t('Altas', 'Signups'), t('Bajas', 'Cancellations')],
+        [3, 42, 82, 118, 142, 162],
+        sb.monthly.map((m) => [
+          M[Number(m.month.slice(5, 7)) - 1] + ' ' + m.month.slice(0, 4),
+          String(m.paidCount),
+          { v: mxn(m.total), c: GOLD, b: true },
+          String(m.active),
+          String(m.started),
+          String(m.canceled),
+        ]),
+        [36, 36, 34, 22, 18, 18],
+      );
+      totalRow(t(`Total suscripciones ${d.year}`, `Subscription total ${d.year}`), mxn(sb.monthly.reduce((s, m) => s + m.total, 0)));
+    } else {
+      note(t('Sin cobros de suscripción en este periodo.', 'No subscription charges in this period.'));
+    }
   }
 
   // ---- Lessons still owed on active packages

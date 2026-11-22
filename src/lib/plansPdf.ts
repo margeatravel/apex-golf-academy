@@ -182,5 +182,5 @@ export async function downloadPlansPdf() {
 
   doc.setFontSize(9); doc.setTextColor(...GOLD);
   doc.text(`margeagolfacademy.com · ${new Date().toLocaleDateString('es-MX')}`, M, H - 20);
-  doc.save('Apex-Planes.pdf');
+  doc.save('Margea-Golf-Academy-Planes.pdf');
 }

@@ -212,7 +212,7 @@ export async function createClientPlansPdf(): Promise<Blob> {
 }
 
 export async function deliverClientPlansPdf(blob: Blob) {
-  const filename = 'Apex-Planes-para-clientes.pdf';
+  const filename = 'Margea-Golf-Academy-Planes-para-clientes.pdf';
   const file = new File([blob], filename, { type: 'application/pdf' });
   if (matchMedia('(pointer: coarse)').matches && navigator.canShare?.({ files: [file] })) {
     try { await navigator.share({ files: [file], title: 'Planes Margea Golf Academy' }); return; }

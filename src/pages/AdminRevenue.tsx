@@ -3,7 +3,7 @@ import { fmtMXN, fmtMXNStr } from '@/lib/formatCurrency';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, DollarSign, TrendingUp, Calendar, Users, AlertCircle, ExternalLink, CreditCard, Search, Copy, CheckCircle, XCircle, AlertTriangle, RefreshCw, Pencil, Tag, Eye, EyeOff, Wallet, Package as PackageIcon, ChevronDown, Trash2, Plus, CheckCircle2, Play, FileDown } from 'lucide-react';
+import { ArrowLeft, DollarSign, TrendingUp, Calendar, Users, AlertCircle, ExternalLink, CreditCard, Search, Copy, CheckCircle, XCircle, AlertTriangle, RefreshCw, Pencil, Tag, Eye, EyeOff, Wallet, Package as PackageIcon, ChevronDown, Trash2, Plus, CheckCircle2, Play, FileDown, Download } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { isDemoModeActive } from '@/contexts/DemoModeContext';
@@ -14,6 +14,8 @@ import {
   demoManualLessonPayments,
   demoClassPackages,
   demoProfiles,
+  demoSubscriptions,
+  demoBillingPlans,
 } from '@/data/demoData';
 import { DEMO_REVENUE_SUMMARY, DEMO_PACKAGE_SUMMARY } from '@/data/demoData';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,6 +76,26 @@ type GolfFilter = 'all' | 'golf' | 'non_golf' | 'unknown' | 'needs_review';
 
 // Keywords used for auto-classification
 import { autoClassifyTransaction, computeRevenueFrom } from '@/lib/revenueCalc';
+import {
+  isSubscriptionPayment,
+  computeSubscriptionKpis,
+  filterSubscriptionPayments,
+  buildSubscriptionMonthlySummary,
+  matchSubscription,
+  paymentPlanLabel,
+  paymentPeriodLabel,
+  paymentMethodLabel,
+  paymentDateKey,
+  paymentNetMxn,
+  isPaidCharge,
+  subStatusLabel,
+  monthlyMxnForSub,
+  subscriptionPaymentsToCsv,
+  subscriptionMonthlySummaryToCsv,
+  downloadCsv,
+  todayKey,
+  type SubStatusFilter,
+} from '@/lib/subscriptionRevenue';
 import { RevenueProjectionChart } from '@/components/revenue/RevenueProjectionChart';
 import { downloadRevenuePdfReport } from '@/lib/revenuePdfBridge';
 
@@ -113,6 +135,11 @@ export default function AdminRevenue() {
   // Revenue-by-Student panel: search + per-row package modal
   const [studentSearch, setStudentSearch] = useState('');
   const [packagesModalStudent, setPackagesModalStudent] = useState<{ id: string; name: string } | null>(null);
+  // Subscriptions section filters (empty override = default range below)
+  const [subStartOverride, setSubStartOverride] = useState('');
+  const [subEndOverride, setSubEndOverride] = useState('');
+  const [subStudent, setSubStudent] = useState('');
+  const [subStatus, setSubStatus] = useState<SubStatusFilter>('all');
   const [resolvingDupStudent, setResolvingDupStudent] = useState<string | null>(null);
   const [markPaidTarget, setMarkPaidTarget] = useState<MarkPaidTarget | null>(null);
   const [editARTarget, setEditARTarget] = useState<EditARTarget | null>(null);
@@ -226,6 +253,40 @@ export default function AdminRevenue() {
     },
   });
 
+  // Subscriptions section: subscriber state + plan prices (read-only).
+  // Charges come from the stripe_payments query above (reporting_category
+  // 'subscription'); nothing here is mixed into the lessons/packages totals.
+  const { data: subscriptions = [] } = useQuery({
+    queryKey: ['revenue-subscriptions', isDemoModeActive() ? 'demo' : 'live'],
+    queryFn: async () => {
+      if (isDemoModeActive()) return demoSubscriptions as any[];
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('*, billing_plans(price_amount, billing_interval, currency)')
+        .order('created_at', { ascending: false });
+      if (error) { console.error('Error fetching subscriptions:', error); return []; }
+      return data || [];
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    staleTime: 30_000,
+  });
+
+  const { data: billingPlans = [] } = useQuery({
+    queryKey: ['revenue-billing-plans', isDemoModeActive() ? 'demo' : 'live'],
+    queryFn: async () => {
+      if (isDemoModeActive()) return demoBillingPlans as any[];
+      const { data, error } = await supabase
+        .from('billing_plans')
+        .select('id, stripe_price_id, price_amount, billing_interval, currency');
+      if (error) return [];
+      return data || [];
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    staleTime: 30_000,
+  });
+
   // Latest update across the revenue queries (used for "Updated X ago" badge)
   const lastUpdatedAt = Math.max(stripeUpdatedAt || 0, lessonsUpdatedAt || 0, pkgPayUpdatedAt || 0, pkgUpdatedAt || 0, manualPayUpdatedAt || 0);
 
@@ -250,6 +311,7 @@ export default function AdminRevenue() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'lessons' }, scheduleRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'stripe_payments' }, scheduleRefresh)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'payments' }, scheduleRefresh)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'subscriptions' }, scheduleRefresh)
       .subscribe();
 
     return () => {
@@ -264,6 +326,8 @@ export default function AdminRevenue() {
     queryClient.invalidateQueries({ queryKey: ['revenue-package-payments'] });
     queryClient.invalidateQueries({ queryKey: ['revenue-class-packages'] });
     queryClient.invalidateQueries({ queryKey: ['revenue-manual-payments'] });
+    queryClient.invalidateQueries({ queryKey: ['revenue-subscriptions'] });
+    queryClient.invalidateQueries({ queryKey: ['revenue-billing-plans'] });
     toast.success(t('money.revenueRefreshed'));
   };
 
@@ -706,8 +770,69 @@ export default function AdminRevenue() {
   };
   const chartData = getChartData();
 
-  const totalFilteredRevenue = filteredLessons.reduce((s: number, l: any) => s + (Number(l.revenue) || 0), 0) 
+  const totalFilteredRevenue = filteredLessons.reduce((s: number, l: any) => s + (Number(l.revenue) || 0), 0)
     + filteredPayments.reduce((s: number, p: any) => s + (Number(p.amount) || 0), 0);
+
+  // ============= SUSCRIPCIONES =============
+  // Charges come from the already-loaded stripe_payments (filtered to
+  // subscription charges); subscriber state from `subscriptions` + prices
+  // from `billing_plans`. All math lives in src/lib/subscriptionRevenue.ts
+  // so the page, the CSVs and the PDF always agree. Nothing here feeds the
+  // lessons/packages totals above.
+  const subPriceByStripeId = useMemo(() => {
+    const m = new Map<string, { price_amount: number; billing_interval: string }>();
+    for (const p of billingPlans || []) {
+      if (p.stripe_price_id) m.set(p.stripe_price_id, { price_amount: p.price_amount ?? 0, billing_interval: p.billing_interval || 'month' });
+    }
+    return m;
+  }, [billingPlans]);
+
+  const subscriptionPayments = useMemo(
+    () => enrichedStripePayments.filter((tx: any) => isSubscriptionPayment(tx)),
+    [enrichedStripePayments],
+  );
+
+  const subKpis = useMemo(
+    () => computeSubscriptionKpis(subscriptionPayments, subscriptions, subPriceByStripeId),
+    [subscriptionPayments, subscriptions, subPriceByStripeId],
+  );
+
+  // Default range: from the first recorded charge (or the first subscription
+  // start when there are no charges yet) through today.
+  const subDefaultStart = subKpis.firstDate || todayKey();
+  const subStart = subStartOverride || subDefaultStart;
+  const subEnd = subEndOverride || todayKey();
+
+  const filteredSubPayments = useMemo(
+    () => filterSubscriptionPayments(subscriptionPayments, { start: subStart, end: subEnd, student: subStudent, status: subStatus })
+      .sort((a: any, b: any) => paymentDateKey(b).localeCompare(paymentDateKey(a))),
+    [subscriptionPayments, subStart, subEnd, subStudent, subStatus],
+  );
+
+  const subMonthlySummary = useMemo(
+    () => buildSubscriptionMonthlySummary(filteredSubPayments, subscriptions, subStart.slice(0, 7), subEnd.slice(0, 7)),
+    [filteredSubPayments, subscriptions, subStart, subEnd],
+  );
+
+  // PDF version: current calendar year, January through today.
+  const subPdfMonthly = useMemo(() => {
+    const year = new Date().getFullYear();
+    return buildSubscriptionMonthlySummary(subscriptionPayments, subscriptions, `${year}-01`, todayKey().slice(0, 7));
+  }, [subscriptionPayments, subscriptions]);
+
+  const subFilteredTotalMxn = useMemo(
+    () => filteredSubPayments.reduce((s: number, tx: any) => s + (isPaidCharge(tx) ? paymentNetMxn(tx) : 0), 0),
+    [filteredSubPayments],
+  );
+
+  const handleDownloadSubCsv = () => {
+    downloadCsv(`suscripciones-mga-${todayKey()}.csv`, subscriptionPaymentsToCsv(filteredSubPayments, subscriptions, es));
+    toast.success(es ? 'CSV descargado' : 'CSV downloaded');
+  };
+  const handleDownloadSubSummaryCsv = () => {
+    downloadCsv(`suscripciones-mga-resumen-${todayKey()}.csv`, subscriptionMonthlySummaryToCsv(subMonthlySummary));
+    toast.success(es ? 'CSV descargado' : 'CSV downloaded');
+  };
 
   // Single "PDF report" button: hands the page's own data (KPIs, Revenue
   // Trend, Accounts Receivable) to the projection chart's PDF builder.
@@ -748,6 +873,13 @@ export default function AdminRevenue() {
           paid: Number(p.amount_paid) || 0,
           balance: Number(p.balance) || 0,
         })),
+      },
+      subscriptions: {
+        activeSubscribers: subKpis.activeSubscribers,
+        mrr: subKpis.mrr,
+        monthIncome: subKpis.monthIncome,
+        yearIncome: subKpis.yearIncome,
+        monthly: subPdfMonthly.map((r) => ({ month: r.month, paidCount: r.paidCount, total: r.totalMxn, active: r.active, started: r.started, canceled: r.canceled })),
       },
     };
   };
@@ -2089,6 +2221,184 @@ export default function AdminRevenue() {
                   )}
                 </TableBody>
               </Table>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ============= SUSCRIPCIONES ============= */}
+        <Card className="card-elevated" id="subscriptions-section">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <div className="min-w-0">
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-primary" />
+                  {es ? 'Suscripciones' : 'Subscriptions'}
+                </CardTitle>
+                <CardDescription>
+                  {es ? 'Historial completo de ingresos por suscripciones de Margea Golf Academy — separado de clases y paquetes.' : 'Full subscription income history for Margea Golf Academy — separate from lessons and packages.'}
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button variant="outline" size="sm" onClick={handleDownloadSubCsv} className="gap-1.5 text-xs">
+                  <Download className="h-4 w-4" />
+                  {es ? 'Descargar CSV' : 'Download CSV'}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleDownloadSubSummaryCsv} className="gap-1.5 text-xs">
+                  <Download className="h-4 w-4" />
+                  {es ? 'Descargar resumen mensual CSV' : 'Download monthly summary CSV'}
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* KPI cards */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                { label: es ? 'Suscriptores activos' : 'Active subscribers', value: String(subKpis.activeSubscribers) },
+                { label: 'MRR', value: fmtMXNStr(subKpis.mrr) },
+                { label: es ? `Ingreso suscripciones · ${format(new Date(), 'MMMM yyyy')}` : `Subscription income · ${format(new Date(), 'MMMM yyyy')}`, value: fmtMXNStr(subKpis.monthIncome) },
+                { label: es ? `Total ${new Date().getFullYear()}` : `${new Date().getFullYear()} total`, value: fmtMXNStr(subKpis.yearIncome) },
+              ].map(k => (
+                <div key={k.label} className="glass-card p-4">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider">{k.label}</p>
+                  <p className="text-2xl font-bold text-foreground mt-1">{k.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <Input type="date" value={subStart} onChange={e => setSubStartOverride(e.target.value)} className="h-9 text-sm w-[150px]" aria-label={es ? 'Desde' : 'From'} />
+                <span className="text-xs text-muted-foreground">→</span>
+                <Input type="date" value={subEnd} onChange={e => setSubEndOverride(e.target.value)} className="h-9 text-sm w-[150px]" aria-label={es ? 'Hasta' : 'To'} />
+              </div>
+              <div className="relative flex-1 min-w-[180px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder={es ? 'Buscar alumno…' : 'Search student…'} value={subStudent} onChange={e => setSubStudent(e.target.value)} className="pl-9 h-9 text-sm" />
+              </div>
+              <Select value={subStatus} onValueChange={(v: SubStatusFilter) => setSubStatus(v)}>
+                <SelectTrigger className="w-full sm:w-[150px] h-9 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{es ? 'Todos los estados' : 'All statuses'}</SelectItem>
+                  <SelectItem value="succeeded">{es ? 'Pagado' : 'Paid'}</SelectItem>
+                  <SelectItem value="failed">{es ? 'Fallido' : 'Failed'}</SelectItem>
+                  <SelectItem value="refunded">{es ? 'Reembolsado' : 'Refunded'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Payments table */}
+            {filteredSubPayments.length === 0 ? (
+              <p className="text-center text-sm text-muted-foreground py-8">{es ? 'Sin cobros de suscripción en este periodo' : 'No subscription charges in this period'}</p>
+            ) : (
+              <>
+                {/* Mobile cards */}
+                <div className="md:hidden space-y-2">
+                  {filteredSubPayments.map((tx: any) => {
+                    const sub = matchSubscription(tx, subscriptions);
+                    return (
+                      <div key={tx.id} className="rounded-lg border border-border bg-card/40 p-3 space-y-1.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium truncate">{tx.student_name || tx.student_email || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{paymentDateKey(tx)} · {paymentPlanLabel(tx, sub)}</p>
+                          </div>
+                          <p className="font-semibold text-sm shrink-0">{fmtMXNStr(Number(tx.amount) || 0)} <span className="opacity-60 text-[10px]">{(tx.currency || 'mxn').toUpperCase()}</span></p>
+                        </div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <Badge variant={tx.status === 'succeeded' ? 'default' : 'destructive'} className="text-[10px]">{subStatusLabel(tx.status, es)}</Badge>
+                          <span className="text-[10px] text-muted-foreground">{paymentPeriodLabel(tx, sub)}</span>
+                          <span className="text-[10px] text-muted-foreground">· {paymentMethodLabel(tx)}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Desktop table */}
+                <div className="hidden md:block max-h-[500px] overflow-y-auto overflow-x-auto">
+                  <Table>
+                    <TableHeader className="sticky top-0 z-10 bg-background">
+                      <TableRow>
+                        <TableHead>{es ? 'Fecha' : 'Date'}</TableHead>
+                        <TableHead>{es ? 'Alumno' : 'Student'}</TableHead>
+                        <TableHead>{es ? 'Plan' : 'Plan'}</TableHead>
+                        <TableHead className="text-right">{es ? 'Monto' : 'Amount'}</TableHead>
+                        <TableHead>{es ? 'Moneda' : 'Currency'}</TableHead>
+                        <TableHead>{es ? 'Estado' : 'Status'}</TableHead>
+                        <TableHead>{es ? 'Periodo cubierto' : 'Period covered'}</TableHead>
+                        <TableHead>{es ? 'Método de pago' : 'Payment method'}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredSubPayments.map((tx: any) => {
+                        const sub = matchSubscription(tx, subscriptions);
+                        return (
+                          <TableRow key={tx.id}>
+                            <TableCell className="text-sm whitespace-nowrap">{paymentDateKey(tx)}</TableCell>
+                            <TableCell>
+                              {tx.student_id ? (
+                                <Link to={`/admin/student/${tx.student_id}`} className="hover:underline"><p className="text-sm font-medium">{tx.student_name || '—'}</p></Link>
+                              ) : (
+                                <p className="text-sm font-medium">{tx.student_name || tx.student_email || '—'}</p>
+                              )}
+                              {tx.student_email && <p className="text-xs text-muted-foreground truncate max-w-[180px]">{tx.student_email}</p>}
+                            </TableCell>
+                            <TableCell className="text-sm">{paymentPlanLabel(tx, sub)}</TableCell>
+                            <TableCell className="text-right font-semibold">{fmtMXNStr(Number(tx.amount) || 0)}</TableCell>
+                            <TableCell className="text-sm">{(tx.currency || 'mxn').toUpperCase()}</TableCell>
+                            <TableCell>
+                              <Badge variant={tx.status === 'succeeded' ? 'default' : 'destructive'} className="text-xs">{subStatusLabel(tx.status, es)}</Badge>
+                              {tx.status === 'partially_refunded' && Number(tx.refund_amount) > 0 && (
+                                <p className="text-xs text-destructive">-{fmtMXNStr(Number(tx.refund_amount))}</p>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-sm whitespace-nowrap">{paymentPeriodLabel(tx, sub)}</TableCell>
+                            <TableCell className="text-sm">{paymentMethodLabel(tx)}</TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+                <p className="text-right text-sm text-muted-foreground">
+                  {filteredSubPayments.length} {es ? 'cobros' : 'charges'} · {es ? 'Total' : 'Total'}: <span className="font-semibold text-foreground">{fmtMXNStr(subFilteredTotalMxn)} MXN</span>
+                </p>
+              </>
+            )}
+
+            {/* Monthly summary */}
+            <div>
+              <h3 className="text-sm font-semibold mb-2">{es ? 'Resumen por mes' : 'Monthly summary'}</h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{es ? 'Mes' : 'Month'}</TableHead>
+                      <TableHead className="text-right">{es ? 'Cobros pagados' : 'Paid charges'}</TableHead>
+                      <TableHead className="text-right">Total MXN</TableHead>
+                      <TableHead className="text-right">{es ? 'Suscriptores activos' : 'Active subscribers'}</TableHead>
+                      <TableHead className="text-right">{es ? 'Altas' : 'Signups'}</TableHead>
+                      <TableHead className="text-right">{es ? 'Bajas' : 'Cancellations'}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subMonthlySummary.map((r) => (
+                      <TableRow key={r.month}>
+                        <TableCell className="text-sm font-medium">{r.month}</TableCell>
+                        <TableCell className="text-right">{r.paidCount}</TableCell>
+                        <TableCell className="text-right font-semibold">{fmtMXNStr(r.totalMxn)} MXN</TableCell>
+                        <TableCell className="text-right">{r.active}</TableCell>
+                        <TableCell className="text-right">{r.started}</TableCell>
+                        <TableCell className="text-right">{r.canceled}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              <p className="text-right text-sm text-muted-foreground mt-2">
+                {es ? 'Total del periodo' : 'Period total'}: <span className="font-semibold text-foreground">{fmtMXNStr(subMonthlySummary.reduce((s, r) => s + r.totalMxn, 0))} MXN</span>
+              </p>
             </div>
           </CardContent>
         </Card>
