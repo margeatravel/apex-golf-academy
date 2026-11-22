@@ -303,6 +303,16 @@ export async function findRecurringMoveConflictSlots(opts: {
       });
     }
   }
+  const sids = Array.from(new Set(out.map((c) => c.studentId).filter(Boolean))) as string[];
+  if (sids.length > 0) {
+    const { data: profs } = await supabase.from('profiles').select('id, full_name, email').in('id', sids);
+    const names = new Map<string, string>();
+    for (const p of (profs as any[]) || []) names.set(p.id, p.full_name || p.email || '');
+    for (const c of out) c.studentName = (c.studentId && names.get(c.studentId)) || 'Alumno';
+  }
+  return out;
+}
+
 export interface FutureSpotConflict {
   slotId: string;
   studentId: string | null;
