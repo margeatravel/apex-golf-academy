@@ -974,7 +974,7 @@ export default function PlanSelectionPage() {
                 <Phone className="h-3.5 w-3.5" /> {t('misc.plansWhatsapp')}
               </Button>
             </a>
-            <a href="mailto:admin@margeagolfacademy.com?subject=SC%20Golf%20Academy%20-%20Membership%20Question">
+            <a href="mailto:admin@margeatravel.com?subject=SC%20Golf%20Academy%20-%20Membership%20Question">
               <Button variant="outline" size="sm" className="btn-glass text-xs gap-1.5">
                 <Mail className="h-3.5 w-3.5" /> {t('misc.plansEmail')}
               </Button>
@@ -1018,7 +1018,7 @@ export default function PlanSelectionPage() {
               <CreditCard className="h-4 w-4 mr-2" /> {t('misc.plansOpenBillingPortal')}
             </Button>
             <Button asChild variant="outline">
-              <a href="mailto:admin@margeagolfacademy.com?subject=SC%20Golf%20Academy%20Membership%20Help">
+              <a href="mailto:admin@margeatravel.com?subject=SC%20Golf%20Academy%20Membership%20Help">
                 <Mail className="h-4 w-4 mr-2" /> {t('misc.plansEmailSupport')}
               </a>
             </Button>
