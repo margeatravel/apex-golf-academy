@@ -478,6 +478,10 @@ Deno.serve(async (req) => {
       const pausedUntil = slot.paused_until
         ? String(slot.paused_until).substring(0, 10)
         : null;
+      // "Ends on": temporary spots generate nothing on or after ends_on.
+      const endsOn = slot.ends_on
+        ? String(slot.ends_on).substring(0, 10)
+        : null;
 
       for (const stream of streams) {
         let cursor = firstOccurrenceOnOrAfter(today, stream.weekday);
@@ -487,7 +491,8 @@ Deno.serve(async (req) => {
             (pausedUntil !== null && dateStr < pausedUntil);
           const beforeWindow = beforeStart ||
             (stream.from !== null && dateStr < stream.from);
-          const afterWindow = stream.until !== null && dateStr >= stream.until;
+          const afterWindow = (stream.until !== null && dateStr >= stream.until) ||
+            (endsOn !== null && dateStr >= endsOn);
           if (!beforeWindow && !afterWindow && isCadenceWeek(dateStr, stream.anchor, stream.n)) {
             candidates.push({
               slot,

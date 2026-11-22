@@ -52,7 +52,7 @@ export function useCalendarWeek(weekDates: Date[]) {
       // ── recurring slots (fixed schedule)
       const recurringQuery = supabase
         .from('recurring_lesson_slots')
-        .select('id, student_id, weekday, start_time, duration_minutes, lesson_type, notes, is_active, package_id, starts_on, paused_until, interval_weeks, interval_anchor')
+        .select('id, student_id, weekday, start_time, duration_minutes, lesson_type, notes, is_active, package_id, starts_on, paused_until, ends_on, interval_weeks, interval_anchor')
         .eq('is_active', true);
       if (coachId) recurringQuery.eq('coach_id', coachId);
       const { data: recurring = [] } = await recurringQuery;
@@ -271,6 +271,11 @@ export function useCalendarWeek(weekDates: Date[]) {
             ? String((r as any).paused_until).substring(0, 10)
             : null;
           if (pausedUntil && iso < pausedUntil) continue;
+          // Temporary slot: no projection on or after ends_on.
+          const endsOn = (r as any).ends_on
+            ? String((r as any).ends_on).substring(0, 10)
+            : null;
+          if (endsOn && iso >= endsOn) continue;
           // Custom cadence: off weeks don't project the student.
           if (!isCadenceWeek(iso, (r as any).interval_anchor, (r as any).interval_weeks)) {
             offWeek.push({ iso, r });

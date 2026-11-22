@@ -2300,6 +2300,7 @@ export type Database = {
           coach_id: string | null
           created_at: string
           duration_minutes: number
+          ends_on: string | null
           id: string
           interval_anchor: string | null
           interval_weeks: number
@@ -2329,6 +2330,7 @@ export type Database = {
           coach_id?: string | null
           created_at?: string
           duration_minutes?: number
+          ends_on?: string | null
           id?: string
           interval_anchor?: string | null
           interval_weeks?: number
@@ -2358,6 +2360,7 @@ export type Database = {
           coach_id?: string | null
           created_at?: string
           duration_minutes?: number
+          ends_on?: string | null
           id?: string
           interval_anchor?: string | null
           interval_weeks?: number

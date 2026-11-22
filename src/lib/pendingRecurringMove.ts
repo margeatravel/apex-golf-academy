@@ -127,7 +127,7 @@ export async function findRecurringMoveConflicts(opts: {
 
   let q = supabase
     .from('recurring_lesson_slots')
-    .select('id, student_id, weekday, start_time, duration_minutes, lesson_type, coach_id, pending_weekday, pending_start_time, pending_effective_date, interval_weeks, interval_anchor, pending_interval_weeks, pending_interval_anchor')
+    .select('id, student_id, weekday, start_time, duration_minutes, lesson_type, coach_id, pending_weekday, pending_start_time, pending_effective_date, interval_weeks, interval_anchor, pending_interval_weeks, pending_interval_anchor, paused_until, ends_on')
     .eq('is_active', true);
   if (opts.coachId) q = q.eq('coach_id', opts.coachId);
   const { data } = await q;
@@ -136,7 +136,12 @@ export async function findRecurringMoveConflicts(opts: {
   const conflicts: string[] = [];
   const ids = new Set<string>();
 
-  const rows = ((data as any[]) || []).filter((r) => r.id !== opts.slotId);
+  // A slot that already ended (ends_on <= effective) occupies nothing.
+  const rows = ((data as any[]) || []).filter((r) => {
+    if (r.id === opts.slotId) return false;
+    const endsOn = r.ends_on ? String(r.ends_on).substring(0, 10) : null;
+    return !endsOn || endsOn > effective;
+  });
 
   // A slot with a scheduled move only keeps its CURRENT day/time until the
   // move's effective date. That old leg only blocks the new spot if a real
@@ -298,12 +303,119 @@ export async function findRecurringMoveConflictSlots(opts: {
       });
     }
   }
-  const sids = Array.from(new Set(out.map((c) => c.studentId).filter(Boolean))) as string[];
+export interface FutureSpotConflict {
+  slotId: string;
+  studentId: string | null;
+  studentName: string;
+  label: string; // "Wed 5:00pm"
+  resumesOn: string; // YYYY-MM-DD — the paused slot's paused_until
+}
+
+/**
+ * Paused-aware conflict check for creating a NEW recurring spot.
+ *
+ * A paused slot (paused_until in the future) does NOT hard-block a spot
+ * that starts before the pause ends — it only becomes a conflict when the
+ * pause lifts, so it is returned in `future` with the resume date. The
+ * caller can then create the new spot as TEMPORARY, ending it on the
+ * resume date (ends_on = paused_until), so the two never collide.
+ *
+ * A slot that already ended (ends_on <= effective date) blocks nothing.
+ * Everything else that overlaps is a `hard` conflict, same format as
+ * findRecurringMoveConflicts ("Ana López · Tue 12:30pm").
+ */
+export async function findRecurringSpotConflicts(opts: {
+  weekday: number;
+  startTime: string;
+  durationMinutes: number;
+  lessonType?: string | null;
+  coachId?: string | null;
+  effectiveDate?: string | null;
+  intervalWeeks?: number | null;
+  intervalAnchor?: string | null;
+}): Promise<{ hard: string[]; future: FutureSpotConflict[] }> {
+  const start = timeToMinutes(normalizeTimeHM(opts.startTime));
+  const end =
+    start +
+    getSlotDurationMinutes({
+      duration_minutes: opts.durationMinutes,
+      lesson_type: opts.lessonType ?? null,
+    });
+
+  let q = supabase
+    .from('recurring_lesson_slots')
+    .select('id, student_id, weekday, start_time, duration_minutes, lesson_type, coach_id, paused_until, ends_on, pending_weekday, pending_start_time, pending_effective_date, interval_weeks, interval_anchor, pending_interval_weeks, pending_interval_anchor')
+    .eq('is_active', true);
+  if (opts.coachId) q = q.eq('coach_id', opts.coachId);
+  const { data } = await q;
+
+  const effective = opts.effectiveDate || getCancunToday();
+  const hard: string[] = [];
+  const future: FutureSpotConflict[] = [];
+  const seenFuture = new Set<string>();
+  const seenHard = new Set<string>();
+
+  for (const row of (data as any[]) || []) {
+    const endsOn = row.ends_on ? String(row.ends_on).substring(0, 10) : null;
+    if (endsOn && endsOn <= effective) continue;
+    const pausedUntil = row.paused_until ? String(row.paused_until).substring(0, 10) : null;
+    const isPaused = !!pausedUntil && pausedUntil > effective;
+    const pending = getPendingMove(row);
+    // Legs that can collide with a spot starting at `effective`.
+    const legs: { weekday: number; time: string; n: number | null; a: string | null }[] = [];
+    if (pending) {
+      legs.push({
+        weekday: pending.weekday,
+        time: pending.startTime,
+        n: row.pending_interval_weeks ?? row.interval_weeks,
+        a: row.pending_interval_anchor ?? row.interval_anchor,
+      });
+      // The old leg only matters until the move takes effect; while paused
+      // it is the schedule that resumes, so keep it as the resume leg.
+      if (pending.effectiveDate > effective) {
+        legs.push({ weekday: row.weekday, time: normalizeTimeHM(row.start_time), n: row.interval_weeks, a: row.interval_anchor });
+      }
+    } else {
+      legs.push({ weekday: row.weekday, time: normalizeTimeHM(row.start_time), n: row.interval_weeks, a: row.interval_anchor });
+    }
+    for (const leg of legs) {
+      if (leg.weekday !== opts.weekday) continue;
+      if (!cadencesOverlap(opts.intervalWeeks ?? 1, opts.intervalAnchor ?? null, leg.n, leg.a)) continue;
+      const s = timeToMinutes(leg.time);
+      const e = s + getSlotDurationMinutes(row);
+      if (s < end && start < e) {
+        if (isPaused) {
+          if (seenFuture.has(row.id)) continue;
+          seenFuture.add(row.id);
+          future.push({
+            slotId: row.id,
+            studentId: row.student_id ?? null,
+            studentName: '',
+            label: `${WEEKDAYS_SHORT_LABEL[leg.weekday]} ${fmtTime12h(leg.time)}`,
+            resumesOn: pausedUntil!,
+          });
+        } else {
+          if (seenHard.has(row.id)) continue;
+          seenHard.add(row.id);
+          hard.push(`${WEEKDAYS_SHORT_LABEL[leg.weekday]} ${fmtTime12h(leg.time)}|${row.student_id ?? ''}`);
+        }
+      }
+    }
+  }
+  const sids = Array.from(
+    new Set([...hard.map((c) => c.split('|')[1]), ...future.map((c) => c.studentId)].filter(Boolean)),
+  ) as string[];
+  const names = new Map<string, string>();
   if (sids.length > 0) {
     const { data: profs } = await supabase.from('profiles').select('id, full_name, email').in('id', sids);
-    const names = new Map<string, string>();
     for (const p of (profs as any[]) || []) names.set(p.id, p.full_name || p.email || '');
-    for (const c of out) c.studentName = (c.studentId && names.get(c.studentId)) || 'Alumno';
   }
-  return out;
+  const hardNamed = hard.map((c) => {
+    const [label, sid] = c.split('|');
+    const n = sid ? names.get(sid) : '';
+    return n ? `${n} · ${label}` : label;
+  });
+  for (const f of future) f.studentName = (f.studentId && names.get(f.studentId)) || 'Alumno';
+  return { hard: hardNamed, future };
 }
+

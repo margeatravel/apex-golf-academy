@@ -213,7 +213,7 @@ export function RevenueProjectionChart() {
           supabase.from('lessons').select('lesson_date, status, revenue, duration_minutes, lesson_type, skipped')
             .in('student_id', chunk).gte('lesson_date', histFrom).lte('lesson_date', `${year}-12-31`),
           supabase.from('class_packages').select('id, user_id, package_name, package_size, classes_used, classes_remaining, price, is_active, created_at').in('user_id', chunk),
-          supabase.from('recurring_lesson_slots').select('student_id, weekday, start_time, duration_minutes, lesson_type, interval_weeks, paused_until')
+          supabase.from('recurring_lesson_slots').select('student_id, weekday, start_time, duration_minutes, lesson_type, interval_weeks, paused_until, ends_on')
             .in('student_id', chunk).eq('is_active', true),
         ]);
         hist.push(...(l.data || [])); pkgs.push(...(p.data || [])); slotRows.push(...(s.data || []));
@@ -245,7 +245,7 @@ export function RevenueProjectionChart() {
       pays.forEach((p) => addM(String(p.payment_date || ''), Number(p.amount) || 0));
       const months = Array.from({ length: 12 }, (_, i) => { const k = `${year}-${String(i + 1).padStart(2, '0')}`; return { month: k, revenue: monthMap.get(k) || 0 }; });
       const worked = hist.filter((l) => !l.skipped && (l.status === 'completed' || l.status === 'no_show' || (l.status === 'scheduled' && l.lesson_date <= today)));
-      const activeSlots = slotRows.filter((s) => !s.paused_until || s.paused_until <= today);
+      const activeSlots = slotRows.filter((s) => (!s.paused_until || s.paused_until <= today) && (!s.ends_on || s.ends_on > today));
       const dayN = es ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
       const reportStudents = data.ids.map((id) => {
         const own = pkgs.filter((p) => p.user_id === id).sort((a, b) => b.created_at.localeCompare(a.created_at));

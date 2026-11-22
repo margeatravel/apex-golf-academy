@@ -13,7 +13,11 @@ import { SearchableStudentSelect } from '@/components/SearchableStudentSelect';
 import { HourPicker } from '@/components/HourPicker';
 import { StartsOnField, startsOnShortLabel } from '@/components/recurring/StartsOnField';
 import { getCancunToday } from '@/lib/cancunDate';
-import { findRecurringMoveConflicts } from '@/lib/pendingRecurringMove';
+import { findRecurringSpotConflicts, formatShortDate, addDaysISO, type FutureSpotConflict } from '@/lib/pendingRecurringMove';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Props {
   open: boolean;
@@ -51,6 +55,10 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
   // Same "Starting from" behaviour as the open-spot flow: today = as before,
   // a future date means lessons only start from that date.
   const [startsOn, setStartsOn] = useState(getCancunToday());
+  // Paused-slot overlaps waiting for confirmation: the new spot is created
+  // as TEMPORARY and ends on the day the paused slot resumes.
+  const [confirmFuture, setConfirmFuture] = useState<{ weekday: number; future: FutureSpotConflict[] }[] | null>(null);
+  const [pendingEndsOn, setPendingEndsOn] = useState<Map<number, string | null> | null>(null);
 
   // Reset on open
   useEffect(() => {
@@ -103,7 +111,7 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
     );
   };
 
-  const handleSave = async () => {
+  const handleSave = async (confirmedEndsOn?: Map<number, string | null> | null) => {
     if (!user?.id) {
       toast({ title: 'Sign in required', variant: 'destructive' });
       return;
@@ -130,24 +138,39 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
     try {
       const normalizedTime = startTime.length === 5 ? `${startTime}:00` : startTime;
 
-      // Same conflict rule as the open-spot flow, valid from the start date
-      // (Playing Lessons span 2 slots).
-      for (const weekday of selectedDays) {
-        const conflicts = await findRecurringMoveConflicts({
-          slotId: '',
-          weekday,
-          startTime: normalizedTime,
-          durationMinutes: parseInt(duration, 10),
-          lessonType,
-          coachId: user.id,
-          effectiveDate: future ? startsOn : today,
-        });
-        if (conflicts.length > 0) {
-          toast({
-            title: 'Horario ocupado',
-            description: `Ya hay un alumno en ${conflicts[0]}.`,
-            variant: 'destructive',
+      // Paused-aware conflict rule, valid from the start date (Playing
+      // Lessons span 2 slots). A paused slot does NOT block: the new spot
+      // is created as temporary and ends when the pause lifts.
+      let endsOnMap: Map<number, string | null>;
+      if (confirmedEndsOn) {
+        endsOnMap = confirmedEndsOn;
+      } else {
+        endsOnMap = new Map();
+        const futureChecks: { weekday: number; future: FutureSpotConflict[] }[] = [];
+        for (const weekday of selectedDays) {
+          const res = await findRecurringSpotConflicts({
+            weekday,
+            startTime: normalizedTime,
+            durationMinutes: parseInt(duration, 10),
+            lessonType,
+            coachId: user.id,
+            effectiveDate: future ? startsOn : today,
           });
+          if (res.hard.length > 0) {
+            toast({
+              title: 'Horario ocupado',
+              description: `Ya hay un alumno en ${res.hard[0]}.`,
+              variant: 'destructive',
+            });
+            setSaving(false);
+            return;
+          }
+          endsOnMap.set(weekday, res.future[0]?.resumesOn ?? null);
+          if (res.future.length > 0) futureChecks.push({ weekday, future: res.future });
+        }
+        if (futureChecks.length > 0) {
+          setPendingEndsOn(endsOnMap);
+          setConfirmFuture(futureChecks);
           setSaving(false);
           return;
         }
@@ -163,6 +186,7 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
         is_active: true,
         coach_id: user.id,
         starts_on: future ? startsOn : null,
+        ends_on: endsOnMap.get(weekday) ?? null,
       }));
       const { error } = await supabase.from('recurring_lesson_slots').insert(rows);
       if (error) throw error;
@@ -238,6 +262,7 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
   const startsOnFuture = startsOn > getCancunToday();
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -387,12 +412,42 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>Cancel</Button>
-          <Button onClick={handleSave} disabled={saving} className="bg-[#4a7c59] hover:bg-[#4a7c59]/80">
+          <Button onClick={() => handleSave()} disabled={saving} className="bg-[#4a7c59] hover:bg-[#4a7c59]/80">
             {saving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
             Save {selectedDays.length > 1 ? `${selectedDays.length} spots` : 'spot'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    <AlertDialog open={!!confirmFuture} onOpenChange={(o) => { if (!o) { setConfirmFuture(null); setPendingEndsOn(null); } }}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Horario pausado — agendar temporal</AlertDialogTitle>
+          <AlertDialogDescription>
+            {(confirmFuture ?? []).flatMap((c) => c.future).map((f) => (
+              <span key={f.slotId} className="mb-2 block">
+                {f.studentName} tiene este horario pausado y vuelve el {formatShortDate(f.resumesOn, 'es')} ({f.label}).
+                Puedes agendarlo mientras tanto: el horario terminará solo el {formatShortDate(addDaysISO(f.resumesOn, -1), 'es')}, cuando vuelva {f.studentName}.
+              </span>
+            ))}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => {
+              const endsOn = pendingEndsOn;
+              setConfirmFuture(null);
+              setPendingEndsOn(null);
+              handleSave(endsOn);
+            }}
+          >
+            Agendar temporal
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

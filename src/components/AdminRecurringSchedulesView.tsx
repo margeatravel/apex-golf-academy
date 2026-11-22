@@ -33,6 +33,7 @@ import { Pencil } from 'lucide-react';
 import { PendingMoveBadge } from '@/components/PendingMoveBadge';
 import { StartsOnBadge } from '@/components/StartsOnBadge';
 import { PausedChip } from '@/components/recurring/PausedChip';
+import { EndsOnChip } from '@/components/recurring/EndsOnChip';
 import { CadenceBadge } from '@/components/recurring/CadenceBadge';
 import { getPendingMove, cancelPendingMove, normalizeTimeHM } from '@/lib/pendingRecurringMove';
 import { getCancunToday } from '@/lib/cancunDate';
@@ -786,6 +787,7 @@ export function AdminRecurringSchedulesView({ variant = 'full', mode = 'full' }:
                         <PendingMoveBadge slot={s} className="ml-1" />
                         <StartsOnBadge slot={s} className="ml-1" />
                         <PausedChip slot={s} className="ml-1" />
+                        <EndsOnChip slot={s} className="ml-1" />
                         <CadenceBadge weeks={s.interval_weeks} className="ml-1" />
                       </div>
                       <Link
@@ -1022,6 +1024,7 @@ export function AdminRecurringSchedulesView({ variant = 'full', mode = 'full' }:
                                       />
                                       <StartsOnBadge slot={s} />
                                       {s.__segment !== 'pending' && <PausedChip slot={s} />}
+                                      {s.__segment !== 'pending' && <EndsOnChip slot={s} />}
                                       <CadenceBadge weeks={s.interval_weeks} />
                                      {isShared && (
                                        <Popover>
