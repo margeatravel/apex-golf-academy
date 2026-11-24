@@ -128,14 +128,14 @@ serve(async (req) => {
     ] = await Promise.all([
       admin.from("profiles").select("full_name, email, plan_tier, handicap, manual_plan_override").eq("id", student_id).single(),
       admin.from("lessons").select("id, lesson_date, lesson_time, lesson_type, status, coach_notes, student_notes, duration_minutes, package_id").eq("student_id", student_id).eq("skipped", false).eq("status", "completed").gte("lesson_date", date_start).lte("lesson_date", date_end).order("lesson_date"),
-      admin.from("videos").select("id, title, description, coach_feedback, next_steps, upload_date, category, lesson_id").eq("student_id", student_id).gte("upload_date", date_start).lte("upload_date", date_end).order("upload_date"),
+      admin.from("videos").select("id, title, description, coach_feedback, next_steps, upload_date, category, lesson_id").eq("student_id", student_id).gte("upload_date", date_start + "T00:00:00").lte("upload_date", date_end + "T23:59:59").order("upload_date"),
       admin.from("student_media").select("title, uploaded_at, file_type").eq("student_id", student_id).gte("uploaded_at", date_start + "T00:00:00").lte("uploaded_at", date_end + "T23:59:59").order("uploaded_at"),
       admin.from("golf_rounds").select("played_on, total_score, course_par, course_name_snapshot, holes_played, fairways_hit, fairways_total, greens_in_regulation, putts, penalties, lost_balls, round_type, notes, birdies, bogeys, pars, doubles_plus, eagles, up_downs_attempted, up_downs_converted, par3_avg, par4_avg, par5_avg").eq("student_id", student_id).gte("played_on", date_start).lte("played_on", date_end).order("played_on"),
       admin.from("class_packages").select("id, package_name, package_size, classes_remaining, is_active, price, amount_paid, payment_date, payment_status").eq("user_id", student_id).order("payment_date", { ascending: false }),
       admin.from("handicap_history").select("handicap, recorded_at").eq("user_id", student_id).order("recorded_at"),
       admin.from("student_coach_notes").select("title, body, created_at").eq("student_id", student_id).order("created_at"),
       admin.from("lessons").select("id, lesson_date, lesson_type, coach_notes, student_notes").eq("student_id", student_id).eq("skipped", false).eq("status", "completed").gte("lesson_date", histStart).lte("lesson_date", date_end),
-      admin.from("videos").select("upload_date, coach_feedback, next_steps, description, lesson_id").eq("student_id", student_id).gte("upload_date", histStart).lte("upload_date", date_end),
+      admin.from("videos").select("upload_date, coach_feedback, next_steps, description, lesson_id").eq("student_id", student_id).gte("upload_date", histStart + "T00:00:00").lte("upload_date", date_end + "T23:59:59"),
     ]);
 
     const profile = profileRes.data;
