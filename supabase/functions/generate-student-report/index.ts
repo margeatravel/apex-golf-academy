@@ -309,10 +309,10 @@ ${themeTally.map((t) => `- ${t.theme}: ${t.count}`).join("\n")}` : "";
         return Math.abs(nd - vd) <= 7 * 86400000;
       });
       const parts = [`- ${vDate} | ${v.title || "Untitled"}${v.category ? ` [${v.category}]` : ""}`];
-      if (v.coach_feedback?.trim()) parts.push(`video coach feedback: "${truncate(v.coach_feedback.trim(), 200)}"`);
-      if (sameLesson?.coach_notes?.trim()) parts.push(`same-lesson coach note: "${truncate(sameLesson.coach_notes.trim(), 200)}"`);
+      if (v.coach_feedback?.trim()) parts.push(`video coach feedback: "${truncate(v.coach_feedback.trim(), 400)}"`);
+      if (sameLesson?.coach_notes?.trim()) parts.push(`same-lesson coach note: "${truncate(sameLesson.coach_notes.trim(), 400)}"`);
       for (const n of nearby) {
-        parts.push(`±7d note (${(n.created_at || "").slice(0,10)}): "${truncate((n.body || "").trim(), 200)}"`);
+        parts.push(`±7d note (${(n.created_at || "").slice(0,10)}): "${truncate((n.body || "").trim(), 300)}"`);
       }
       videoCorrelationLines.push(parts.join(" | "));
     }
@@ -545,7 +545,7 @@ By type: ${typeLine}
 ${lessons.map((l: any) => `- ${l.lesson_date} ${l.lesson_time || ""} | ${normalizeLessonType(l.lesson_type)} | ${l.status} | ${l.duration_minutes || 60}min${l.coach_notes ? ` | coach: ${truncate(l.coach_notes, 300)}` : ""}${l.student_notes ? ` | student: ${truncate(l.student_notes, 300)}` : ""}`).join("\n")}` : ""}
 
 ${videos.length > 0 ? `### Videos (${videos.length})
-${videos.map((v: any) => `- ${v.upload_date} | ${v.title || "Untitled"}${v.category ? ` [${v.category}]` : ""}${v.description ? ` | desc: ${truncate(v.description, 240)}` : ""}${v.coach_feedback ? ` | coach: ${truncate(v.coach_feedback, 240)}` : ""}${v.next_steps ? ` | next: ${truncate(v.next_steps, 240)}` : ""}`).join("\n")}` : ""}
+${videos.map((v: any) => `- ${v.upload_date} | ${v.title || "Untitled"}${v.category ? ` [${v.category}]` : ""}${v.description ? ` | desc: ${truncate(v.description, 500)}` : ""}${v.coach_feedback ? ` | coach: ${truncate(v.coach_feedback, 500)}` : ""}${v.next_steps ? ` | next: ${truncate(v.next_steps, 500)}` : ""}`).join("\n")}` : ""}
 
 ${media.length > 0 ? `### Media Uploads (${media.length})
 ${media.map((m: any) => `- ${m.uploaded_at?.split("T")[0]} | ${m.title || "Untitled"} | ${m.file_type || "file"}`).join("\n")}` : ""}
@@ -611,17 +611,17 @@ REPORT STRUCTURE (render ALL sections, in this order, always — even when empty
 **Period:** [date range]
 
 ## Student Overview
-1–2 sentences only. MUST include: plan/subscription, current handicap + delta vs start of period (use Handicap Trend block), lesson count, round count.
+2–3 sentences. MUST include: plan/subscription, current handicap + delta vs start of period (use Handicap Trend block), lesson count, round count.
 
 ## Progress & Advancements
-Max 3 bullets. Each MUST paraphrase a specific coach note, video coach feedback, or measurable stat improvement present in the data. No general statements. If none: "No data available for this period."
+Max 5 bullets. Each MUST paraphrase a specific coach note, video coach feedback, or measurable stat improvement present in the data, and may use 1–2 sentences to develop the point with a concrete example from the data. No general statements. If none: "No data available for this period."
 
 ## Areas for Improvement
-Max 3 bullets. Each MUST be grounded in a recurring theme from coach notes, video next_steps, or a weak stat (low GIR, high putts, etc.) present in the data. If none: "No data available for this period."
+Max 5 bullets. Each MUST be grounded in a recurring theme from coach notes, video next_steps, or a weak stat (low GIR, high putts, etc.) present in the data, and may use 1–2 sentences to develop the point with a concrete example from the data. If none: "No data available for this period."
 
 ## Video Review & Coach Feedback
-Up to 6 single-line bullets combining two groups (no sub-headings, no duplication):
-(a) Video/coach-notes bullets — each ties a video from the "Video ↔ Coach Notes Correlation" block to its matched same-lesson coach note or ±7-day standalone note. Paraphrased, no quotes. Max 3.
+Up to 8 bullets combining two groups (no sub-headings, no duplication):
+(a) Video/coach-notes bullets — each ties a video from the "Video ↔ Coach Notes Correlation" block to its matched same-lesson coach note or ±7-day standalone note. Paraphrased, no quotes. Max 5.
 (b) Working-themes bullets — sourced from "Working Themes" tally, "Handicap Trend", and "Round Trend" blocks. Each bullet must name the theme or stat and cite the count/delta from the data. Max 3.
 If neither group has data: "No data available for this period."
 
@@ -646,7 +646,7 @@ LANGUAGE LOCK — The entire report MUST be written in Mexican Spanish (professi
 
 REGLA DE DATOS (CRÍTICO): No inventes nada. Usa únicamente los datos incluidos arriba; si algo no está registrado (por ejemplo una meta de handicap), no lo menciones. Escribe los nombres de plan con mayúscula: Pro, Scratch, Apex Level.
 
-BREVEDAD (CRÍTICO): El reporte completo debe tener 350–550 palabras (tope 750). En Avance Cronológico usa "2026-10-27 · Clase en tiro de práctica — frase corta". Cada sección: máximo 2–4 oraciones o hasta 6 viñetas de una sola línea. Sin viñetas anidadas. Sin frases de relleno. Parafrasea y combina temas relacionados. Límites: Resumen del Estudiante 1–2 oraciones; Avances 3; Áreas de Mejora 3; Revisión de Video y Notas del Coach máx 6 viñetas (hasta 3 de video/notas + hasta 3 de tendencias de trabajo, sin sub-encabezados, sin duplicar); Estadísticas de Rondas 3–5 viñetas.
+EXTENSIÓN: El reporte completo debe tener 550–800 palabras (tope 950). En Avance Cronológico usa "2026-10-27 · Clase en tiro de práctica — frase corta". Cada sección: 3–5 oraciones o hasta 8 viñetas; cada viñeta puede tener 1–2 oraciones para desarrollar el punto con un ejemplo concreto del dato (qué se observó, qué ejercicio se hizo, qué se busca). Sin viñetas anidadas. Sin frases de relleno. Parafrasea y combina temas relacionados. Si el periodo tiene pocos datos, profundiza en los que hay: desglosa cada nota en sus componentes (por ejemplo, cada corrección del swing por separado) y da un plan de práctica concreto con ejercicios. Límites: Resumen del Estudiante 2–3 oraciones; Avances 4–5; Áreas de Mejora 4–5; Revisión de Video y Notas del Coach máx 8 viñetas (hasta 5 de video/notas + hasta 3 de tendencias de trabajo, sin sub-encabezados, sin duplicar); Estadísticas de Rondas 3–5 viñetas.
 
 ESTRUCTURA OBLIGATORIA: Renderiza SIEMPRE todas las secciones en el orden listado, aunque no haya datos. Si una sección no tiene datos en el contexto, escribe exactamente: "Sin datos disponibles para este periodo." Nunca inventes narrativa de relleno. Cada viñeta debe ser trazable a una fila concreta del contexto (fecha, número, nota, paquete, ronda). Prohibido mencionar Trackman.
 
