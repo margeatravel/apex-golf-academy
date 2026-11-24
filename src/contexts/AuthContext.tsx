@@ -62,6 +62,41 @@ export function getEffectivePlan(profile: Profile | null): 'free' | 'member' | '
   return profile.plan_tier || 'free';
 }
 
+/**
+ * Only a DEFINITIVE auth failure means the stored session is dead (bad /
+ * expired / revoked token). A transient failure — a network blip, a timeout,
+ * the auth service being briefly unreachable — must NOT sign the user out:
+ * the stored session is still valid and supabase-js will retry the refresh
+ * on its own. Treating every getUser() error as "stale session" turned any
+ * hiccup while opening the app into a permanent logout (password required
+ * again), which is exactly what users reported.
+ */
+export function isDefinitiveAuthError(error: unknown): boolean {
+  if (!error) return false;
+  const status = (error as { status?: unknown }).status;
+  if (status === 401 || status === 403) return true;
+  const message = [
+    (error as { message?: unknown }).message,
+    (error as { error_description?: unknown }).error_description,
+    (error as { code?: unknown }).code,
+  ]
+    .filter((v): v is string => typeof v === 'string')
+    .join(' ')
+    .toLowerCase();
+  return (
+    message.includes('invalid jwt') ||
+    message.includes('invalid token') ||
+    message.includes('jwt expired') ||
+    message.includes('token expired') ||
+    message.includes('session expired') ||
+    message.includes('refresh token') ||
+    message.includes('revoked') ||
+    message.includes('user not found') ||
+    message.includes('not authenticated') ||
+    message.includes('auth session missing')
+  );
+}
+
 
 // Check if user has access to premium features
 export function hasAccess(profile: Profile | null, subscription: { subscribed: boolean } | null): boolean {
@@ -536,11 +571,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.getUser();
 
       if (userError || !currentUser) {
-        // Token exists but is no longer valid on the server (expired/revoked).
+        if (!userError || isDefinitiveAuthError(userError)) {
+          // Token exists but is no longer valid on the server (expired/revoked).
+          setSubscription(null);
+          await supabase.auth.signOut().catch(() => {});
+          clearAuthState();
+          navigate('/auth', { replace: true });
+          return;
+        }
+        // Transient failure validating the session (network blip, auth service
+        // briefly unreachable): the stored session is still valid, so keep
+        // the user signed in and just skip the subscription check this time.
+        console.warn('Could not validate session for subscription check (keeping session):', userError);
         setSubscription(null);
-        await supabase.auth.signOut().catch(() => {});
-        clearAuthState();
-        navigate('/auth', { replace: true });
         return;
       }
 
@@ -618,9 +661,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } = await supabase.auth.getUser();
 
       if (userError || !currentUser) {
-        console.error('Discarding stale local session:', userError);
-        clearAuthState();
-        await supabase.auth.signOut();
+        if (!userError || isDefinitiveAuthError(userError)) {
+          console.error('Discarding stale local session:', userError);
+          clearAuthState();
+          await supabase.auth.signOut();
+          setLoading(false);
+          return;
+        }
+        // Transient failure validating the stored session (network blip, auth
+        // service briefly unreachable): keep the session, stop loading and
+        // let the client retry the refresh — do NOT sign the user out or
+        // send them to /auth for a hiccup.
+        console.warn('Could not validate stored session (keeping session):', userError);
+        setSession(session);
+        setUser(session.user);
+        fetchProfile(session.user.id);
         setLoading(false);
         return;
       }

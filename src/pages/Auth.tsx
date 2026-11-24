@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, REMEMBER_ME_KEY } from '@/integrations/supabase/client';
 import { resolveLandingRoute } from '@/lib/staffLanding';
 import { lovable } from '@/integrations/lovable';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { LanguageToggle } from '@/components/LanguageToggle';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +56,7 @@ export default function Auth() {
   const [isLogin, setIsLogin] = useState(!isStaffInvite);
   const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [fullName, setFullName] = useState('');
   const [inviteCode, setInviteCode] = useState(refCodeFromUrl);
   const [loading, setLoading] = useState(false);
@@ -257,6 +259,17 @@ export default function Auth() {
     try {
       const formData = isLogin ? { email, password } : { email, password, fullName };
       authSchema.parse(formData);
+
+      // "Recordarme": fix where the session will live BEFORE signing in.
+      // Checked (default) -> localStorage, session survives closing the tab.
+      // Unchecked -> sessionStorage, session ends when the tab closes.
+      // The storage adapter in the supabase client reads this flag on every
+      // get/set/remove; it only affects the next sign-in.
+      try {
+        localStorage.setItem(REMEMBER_ME_KEY, rememberMe ? '1' : '0');
+      } catch {
+        // Storage unavailable: fall back to the default (remember).
+      }
 
       if (isLogin) {
         // Remember which mode was selected on the staff/coach sign-in flow so
@@ -802,7 +815,16 @@ export default function Auth() {
               </div>
 
               {isLogin && (
-                <div className="text-right -mt-2">
+                <div className="flex items-center justify-between -mt-2">
+                  <label htmlFor="rememberMe" className="flex items-center gap-2 text-xs text-ivory/70 cursor-pointer select-none">
+                    <Checkbox
+                      id="rememberMe"
+                      checked={rememberMe}
+                      onCheckedChange={(checked) => setRememberMe(checked === true)}
+                      className="border-white/30 data-[state=checked]:bg-gold-accent data-[state=checked]:border-gold-accent data-[state=checked]:text-black"
+                    />
+                    {t('auth.rememberMe')}
+                  </label>
                   <Link to="/auth/forgot" className="text-xs text-ivory/50 hover:text-gold-accent transition-colors">
                     {t('auth.forgotPassword')}
                   </Link>
