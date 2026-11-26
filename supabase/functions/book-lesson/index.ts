@@ -23,6 +23,23 @@ function cancunWeekday(dateStr: string): number {
   return map[wd] ?? 0;
 }
 
+/** Monday (Mon–Sun week) of a YYYY-MM-DD date — same as generate-recurring-lessons. */
+function mondayOfISO(dateStr: string): string {
+  const [y, m, d] = dateStr.substring(0, 10).split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7));
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Custom cadence (every N weeks): true on weeks the student actually comes. */
+function isCadenceWeek(dateStr: string, anchor: string | null | undefined, n: number | null | undefined): boolean {
+  if (!n || n <= 1 || !anchor) return true;
+  const a = Date.parse(`${mondayOfISO(String(anchor))}T00:00:00Z`);
+  const b = Date.parse(`${mondayOfISO(dateStr)}T00:00:00Z`);
+  const weeks = Math.round((b - a) / (7 * 86400000));
+  return weeks >= 0 && weeks % n === 0;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -231,6 +248,23 @@ serve(async (req) => {
           ((l.lesson_time as string) || "").slice(0, 5) === requestedTime &&
           !l.skip_keep_closed &&
           (l.coach_id ?? DEFAULT_COACH_ID) === targetCoachId,
+      );
+    }
+
+    if (!allowed) {
+      // Off-cadence week of an every-N-weeks student at this exact time —
+      // same rule (c) as get-available-slots.
+      const { data: cadenceSlots = [] } = await admin
+        .from("recurring_lesson_slots")
+        .select("start_time, coach_id, interval_weeks, interval_anchor")
+        .eq("is_active", true)
+        .eq("weekday", wd)
+        .gt("interval_weeks", 1);
+      allowed = (cadenceSlots || []).some(
+        (r: any) =>
+          ((r.start_time as string) || "").slice(0, 5) === requestedTime &&
+          (r.coach_id ?? DEFAULT_COACH_ID) === targetCoachId &&
+          !isCadenceWeek(lessonDate, r.interval_anchor, r.interval_weeks),
       );
     }
 

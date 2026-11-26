@@ -37,6 +37,23 @@ function timeToMinutes(t: string): number {
   const [h, m] = t.split(":").map(Number);
   return h * 60 + (m || 0);
 }
+/** Monday (Mon–Sun week) of a YYYY-MM-DD date — same as generate-recurring-lessons. */
+function mondayOfISO(dateStr: string): string {
+  const [y, m, d] = dateStr.substring(0, 10).split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7));
+  return dt.toISOString().slice(0, 10);
+}
+
+/** Custom cadence (every N weeks): true on weeks the student actually comes. */
+function isCadenceWeek(dateStr: string, anchor: string | null | undefined, n: number | null | undefined): boolean {
+  if (!n || n <= 1 || !anchor) return true;
+  const a = Date.parse(`${mondayOfISO(String(anchor))}T00:00:00Z`);
+  const b = Date.parse(`${mondayOfISO(dateStr)}T00:00:00Z`);
+  const weeks = Math.round((b - a) / (7 * 86400000));
+  return weeks >= 0 && weeks % n === 0;
+}
+
 function minutesToTime(min: number): string {
   const h = Math.floor(min / 60).toString().padStart(2, "0");
   const m = (min % 60).toString().padStart(2, "0");
@@ -139,7 +156,7 @@ serve(async (req) => {
     // which is exactly what the Master Calendar projects via useCalendarWeek.
     const { data: recurringSlots = [] } = await supabase
       .from("recurring_lesson_slots")
-      .select("id, weekday, start_time, duration_minutes, lesson_type, is_active, paused_until")
+      .select("id, weekday, start_time, duration_minutes, lesson_type, is_active, paused_until, coach_id, interval_weeks, interval_anchor")
       .eq("is_active", true);
 
     // Weeks the coach freed: a lesson skipped for that week (or cancelled
@@ -233,7 +250,9 @@ serve(async (req) => {
       const recurringIntervals: Array<[number, number]> = (recurringSlots || [])
         .filter((r: any) => r.weekday === wd &&
           !(r.paused_until && cursor < String(r.paused_until).slice(0, 10)) &&
-          !freedRecurringByDate.get(cursor)?.has((r as any).id))
+          !freedRecurringByDate.get(cursor)?.has((r as any).id) &&
+          // Every-N-weeks students only occupy their time on cadence weeks.
+          isCadenceWeek(cursor, r.interval_anchor, r.interval_weeks))
         .map((r: any) => {
           const sMin = timeToMinutes(r.start_time as string);
           const dur = longLessonTypes.has((r.lesson_type as string) ?? "")
@@ -283,6 +302,28 @@ serve(async (req) => {
         if (!slots.includes(startTime)) slots.push(startTime);
       }
 
+
+      // (c) Off-cadence weeks of every-N-weeks students: their time is free
+      // this week (mirrors the coach calendar's off-cadence open spot), so it
+      // is offered with the same taken / recurring / block / window checks.
+      for (const r of recurringSlots || []) {
+        if ((r as any).weekday !== wd) continue;
+        if (((r as any).coach_id ?? DEFAULT_COACH_ID) !== targetCoachId) continue;
+        if (!((r as any).interval_weeks > 1)) continue;
+        if (isCadenceWeek(cursor, (r as any).interval_anchor, (r as any).interval_weeks)) continue;
+        const startTime = ((r as any).start_time as string).slice(0, 5);
+        const sMin = timeToMinutes((r as any).start_time as string);
+        const eMin = sMin + (longLessonTypes.has(((r as any).lesson_type as string) ?? "")
+          ? 120
+          : ((r as any).duration_minutes as number) || duration);
+        const dayTaken = takenIntervals.get(cursor) ?? [];
+        if (dayTaken.some(([ts, te]) => sMin < te && eMin > ts)) continue;
+        if (recurringIntervals.some(([ts, te]) => sMin < te && eMin > ts)) continue;
+        if (blockRanges.some(([bs, be]) => sMin < be + buffer && eMin + buffer > bs)) continue;
+        const slotUtc = cancunWallToUtc(cursor, startTime);
+        if (slotUtc < earliestUtc || slotUtc > latestUtc) continue;
+        if (!slots.includes(startTime)) slots.push(startTime);
+      }
 
       slots.sort();
       result.push({ date: cursor, slots });
