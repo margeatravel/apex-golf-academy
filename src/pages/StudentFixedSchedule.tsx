@@ -17,6 +17,9 @@ import { useToast } from '@/hooks/use-toast';
 
 const WEEKDAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
+/** Default coach used by the set_coach_id_default trigger and the booking edge functions. */
+const DEFAULT_COACH_ID = '13480fb4-e4d2-423c-b035-c65846b061fc';
+
 export default function StudentFixedSchedule() {
   const { profile, effectivePlan } = useAuth();
   const { t } = useLanguage();
@@ -35,14 +38,21 @@ export default function StudentFixedSchedule() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fixed_schedule_slots')
-        .select('id, day_of_week, start_time, duration_minutes, lesson_type, student_id, is_available, notes, specific_date')
+        .select('id, day_of_week, start_time, duration_minutes, lesson_type, student_id, is_available, notes, specific_date, coach_id')
         .order('day_of_week', { ascending: true })
         .order('start_time', { ascending: true });
       if (error) throw error;
       // Hide one-time open spots whose date has already passed.
       const today = new Date().toISOString().slice(0, 10);
+      // Only the student's own coach's spots (assigned_coach_id, else the
+      // default coach — same scoping as get-available-slots / book-lesson),
+      // and an unclaimed spot only while the coach has it marked available.
+      const myCoachId = (profile as any)?.assigned_coach_id ?? DEFAULT_COACH_ID;
       return (data ?? []).filter(
-        (s: any) => !s.specific_date || String(s.specific_date).slice(0, 10) >= today,
+        (s: any) =>
+          (!s.specific_date || String(s.specific_date).slice(0, 10) >= today) &&
+          (s.coach_id ?? DEFAULT_COACH_ID) === myCoachId &&
+          (s.student_id != null || s.is_available === true),
       ) as FixedSlot[];
     },
     enabled: !!profile?.id,
