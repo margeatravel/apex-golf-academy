@@ -1107,7 +1107,7 @@ export default function StudentDashboard() {
             const accentSoft = isApex ? 'rgba(56,135,255,' : 'rgba(240,192,64,';
             return (
             <Link
-              to="/lessons"
+              to="/lessons/fixed-schedule"
               style={glassStyle}
               className="px-2 py-3 flex flex-col items-center justify-center text-center relative overflow-hidden"
             >
