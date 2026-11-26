@@ -303,14 +303,17 @@ serve(async (req) => {
       }
 
 
-      // (c) Off-cadence weeks of every-N-weeks students: their time is free
-      // this week (mirrors the coach calendar's off-cadence open spot), so it
-      // is offered with the same taken / recurring / block / window checks.
+      // (c) Recurring students who are not coming this date: paused (before
+      // paused_until, exclusive — same as generate-recurring-lessons) or an
+      // off-cadence week of an every-N-weeks student. Their time is free, so
+      // it is offered with the same taken / recurring / block / window checks.
       for (const r of recurringSlots || []) {
         if ((r as any).weekday !== wd) continue;
         if (((r as any).coach_id ?? DEFAULT_COACH_ID) !== targetCoachId) continue;
-        if (!((r as any).interval_weeks > 1)) continue;
-        if (isCadenceWeek(cursor, (r as any).interval_anchor, (r as any).interval_weeks)) continue;
+        const isPaused = !!(r as any).paused_until && cursor < String((r as any).paused_until).slice(0, 10);
+        const isOffCadence = (r as any).interval_weeks > 1 &&
+          !isCadenceWeek(cursor, (r as any).interval_anchor, (r as any).interval_weeks);
+        if (!isPaused && !isOffCadence) continue;
         const startTime = ((r as any).start_time as string).slice(0, 5);
         const sMin = timeToMinutes((r as any).start_time as string);
         const eMin = sMin + (longLessonTypes.has(((r as any).lesson_type as string) ?? "")

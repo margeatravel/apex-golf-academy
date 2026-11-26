@@ -252,19 +252,20 @@ serve(async (req) => {
     }
 
     if (!allowed) {
-      // Off-cadence week of an every-N-weeks student at this exact time —
-      // same rule (c) as get-available-slots.
+      // Recurring student not coming this date (paused before paused_until,
+      // or an off-cadence week) at this exact time — same rule (c) as
+      // get-available-slots.
       const { data: cadenceSlots = [] } = await admin
         .from("recurring_lesson_slots")
-        .select("start_time, coach_id, interval_weeks, interval_anchor")
+        .select("start_time, coach_id, interval_weeks, interval_anchor, paused_until")
         .eq("is_active", true)
-        .eq("weekday", wd)
-        .gt("interval_weeks", 1);
+        .eq("weekday", wd);
       allowed = (cadenceSlots || []).some(
         (r: any) =>
           ((r.start_time as string) || "").slice(0, 5) === requestedTime &&
           (r.coach_id ?? DEFAULT_COACH_ID) === targetCoachId &&
-          !isCadenceWeek(lessonDate, r.interval_anchor, r.interval_weeks),
+          ((!!r.paused_until && lessonDate < String(r.paused_until).slice(0, 10)) ||
+            (r.interval_weeks > 1 && !isCadenceWeek(lessonDate, r.interval_anchor, r.interval_weeks))),
       );
     }
 
