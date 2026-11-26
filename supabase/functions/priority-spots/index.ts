@@ -228,6 +228,68 @@ async function occupantsFor(admin: any, coachId: string, weekday: number, start:
   });
 }
 
+// ── Email (Resend, same sender as notify-admin / send-notification-email) ──
+const FROM = "Margea Golf Academy <admin@margeagolfacademy.com>";
+const ADMIN_EMAIL = "admin@margeagolfacademy.com";
+const SITE_URL = "https://www.margeagolfacademy.com";
+
+function esc(v: unknown): string {
+  return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function time12(t: string): string {
+  const [h, m] = t.split(":").map(Number);
+  return `${h % 12 === 0 ? 12 : h % 12}:${String(m).padStart(2, "0")} ${h >= 12 ? "PM" : "AM"}`;
+}
+function dateEs(iso: string): string {
+  const meses = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+  const [y, m, d] = iso.split("-").map(Number);
+  return `${d} ${meses[m - 1]} ${y}`;
+}
+
+async function sendEmail(to: string[], subject: string, title: string, rows: Array<[string, string]>, cta: { text: string; href: string }, intro = "") {
+  const key = Deno.env.get("RESEND_API_KEY");
+  const recipients = [...new Set(to.filter((e) => !!e && e.includes("@")).map((e) => e.trim().toLowerCase()))];
+  if (!key || !recipients.length) return;
+  const rowsHtml = rows
+    .map(([k, v]) => `<tr><td style="padding:6px 0;color:rgba(245,240,232,0.6);font-size:13px;width:110px;">${esc(k)}</td><td style="padding:6px 0;color:#f5f0e8;font-size:14px;font-weight:600;">${esc(v)}</td></tr>`)
+    .join("");
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>${esc(subject)}</title></head>
+<body style="margin:0;padding:0;background:#0e2410;font-family:Arial,Helvetica,sans-serif;color:#f5f0e8;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#0e2410;padding:32px 16px;"><tr><td align="center">
+<table role="presentation" width="600" cellspacing="0" cellpadding="0" style="max-width:600px;width:100%;background:#1a2e1c;border-radius:16px;overflow:hidden;">
+<tr><td style="padding:28px 32px;text-align:center;border-bottom:1px solid rgba(239,159,39,0.25);">
+<p style="margin:0;color:#EF9F27;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">Margea Golf Academy</p>
+<h1 style="margin:8px 0 0;color:#ffffff;font-size:20px;">${esc(title)}</h1></td></tr>
+<tr><td style="padding:28px 32px;">
+${intro ? `<p style="margin:0 0 16px;color:rgba(245,240,232,0.8);font-size:14px;line-height:1.6;">${esc(intro)}</p>` : ""}
+<table role="presentation" width="100%" style="background:rgba(255,255,255,0.07);border:1px solid rgba(239,159,39,0.18);border-radius:12px;padding:14px 20px;">${rowsHtml}</table>
+<div style="text-align:center;margin-top:24px;"><a href="${cta.href}" style="display:inline-block;background:#EF9F27;color:#000;text-decoration:none;font-weight:700;padding:12px 24px;border-radius:999px;font-size:14px;">${esc(cta.text)}</a></div>
+</td></tr>
+<tr><td style="padding:18px 32px;text-align:center;border-top:1px solid rgba(239,159,39,0.18);color:rgba(245,240,232,0.5);font-size:12px;">Margea Golf Academy · ${ADMIN_EMAIL}</td></tr>
+</table></td></tr></table></body></html>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ from: FROM, reply_to: ADMIN_EMAIL, to: recipients, subject, html }),
+    });
+    if (!res.ok) console.error("priority-spots email failed", await res.text());
+  } catch (e) {
+    console.warn("priority-spots email error", e);
+  }
+}
+
+/** Owner inbox + the request's coach (when it isn't the owner). */
+// deno-lint-ignore no-explicit-any
+async function coachEmails(admin: any, coachId: string | null): Promise<string[]> {
+  const out = [ADMIN_EMAIL];
+  if (coachId && coachId !== DEFAULT_COACH_ID) {
+    const { data } = await admin.from("profiles").select("email").eq("id", coachId).maybeSingle();
+    if (data?.email) out.push(data.email);
+  }
+  return out;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -305,6 +367,20 @@ serve(async (req) => {
         link: "/admin/fixed-schedule",
         metadata: { request_id: reqRow.id, student_id: studentId },
       });
+      const cadEsReq = interval === 1 ? "Semanal" : `Cada ${interval} semanas`;
+      const reqRows: Array<[string, string]> = [
+        ["Alumno", name], ["Día", DAYS_ES[weekday]], ["Hora", time12(startTime)],
+        ["Frecuencia", cadEsReq], ["Desde", dateEs(startDate)],
+      ];
+      if (body?.notes) reqRows.push(["Nota", String(body.notes).slice(0, 500)]);
+      await Promise.all([
+        sendEmail(await coachEmails(admin, coachId), `Solicitud de horario: ${name} · ${DAYS_ES[weekday]} ${time12(startTime)}`,
+          "Nueva solicitud de horario", reqRows, { text: "Revisar solicitud", href: `${SITE_URL}/admin/fixed-schedule` },
+          `${name} pidió un horario prioritario. Apruébalo o recházalo desde la app.`),
+        sendEmail([prof?.email ?? ""], `Recibimos tu solicitud: ${DAYS_ES[weekday]} ${time12(startTime)}`,
+          "Solicitud enviada", reqRows.filter(([k]) => k !== "Alumno"), { text: "Ver mis horarios", href: `${SITE_URL}/lessons/fixed-schedule` },
+          "Tu Coach revisará tu solicitud y te avisaremos por correo y en la app."),
+      ]);
       return json({ ok: true, id: reqRow.id });
     }
 
@@ -368,6 +444,25 @@ serve(async (req) => {
       const dayEs = DAYS_ES[r.weekday];
       const time = hhmm(r.start_time);
       const cadEs = r.interval_weeks === 1 ? "semanal" : `cada ${r.interval_weeks} semanas`;
+      const { data: stuProf } = await admin.from("profiles").select("full_name, email").eq("id", r.student_id).maybeSingle();
+      const stuName = stuProf?.full_name || stuProf?.email || "Alumno";
+      const decisionEmails = async (approved: boolean, startIso: string) => {
+        const rowsD: Array<[string, string]> = [
+          ["Alumno", stuName], ["Día", DAYS_ES[r.weekday]], ["Hora", time12(time)],
+          ["Frecuencia", cadEs.charAt(0).toUpperCase() + cadEs.slice(1)], [approved ? "Desde" : "Pedido desde", dateEs(startIso)],
+        ];
+        if (!approved && body?.note) rowsD.push(["Nota", String(body.note).slice(0, 500)]);
+        const subj = approved
+          ? `Horario aprobado: ${DAYS_ES[r.weekday]} ${time12(time)}`
+          : `Solicitud no aprobada: ${DAYS_ES[r.weekday]} ${time12(time)}`;
+        await Promise.all([
+          sendEmail([stuProf?.email ?? ""], subj, approved ? "Tu horario fue aprobado" : "Tu solicitud no fue aprobada",
+            rowsD.filter(([k]) => k !== "Alumno"), { text: "Ver mis horarios", href: `${SITE_URL}/lessons/fixed-schedule` },
+            approved ? "Tu Coach aprobó tu horario prioritario. Tus clases ya están en tu calendario." : "Tu Coach no pudo aprobar este horario. Puedes pedir otro desde la app."),
+          sendEmail(await coachEmails(admin, r.coach_id), `${subj} · ${stuName}`, approved ? "Horario aprobado" : "Solicitud rechazada",
+            rowsD, { text: "Ver Lugar Prioritario", href: `${SITE_URL}/admin/fixed-schedule` }),
+        ]);
+      };
 
       if (decision === "reject") {
         await admin.from("priority_spot_requests").update({
@@ -381,6 +476,7 @@ serve(async (req) => {
           link: "/lessons/fixed-schedule",
           metadata: { request_id: r.id, status: "rejected" },
         });
+        await decisionEmails(false, String(r.start_date).slice(0, 10));
         return json({ ok: true, status: "rejected" });
       }
       if (decision !== "approve") return json({ error: "invalid_request" }, 400);
@@ -428,6 +524,7 @@ serve(async (req) => {
         link: "/lessons/fixed-schedule",
         metadata: { request_id: r.id, status: "approved", recurring_slot_id: ins.id },
       });
+      await decisionEmails(true, start);
       return json({ ok: true, status: "approved", start });
     }
 
