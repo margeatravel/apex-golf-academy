@@ -350,8 +350,13 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
     if (!fixedSlotId) return;
     setSubmitting(true);
     try {
-      const { data, error } = await supabase.functions.invoke('claim-recurring-slot', {
-        body: { slotId: fixedSlotId },
+      // priority-spots creates the recurring slot + lessons (claim-recurring-slot
+      // only marked the spot: its DB trigger skips service-role updates).
+      const spot = fixedSlots.find((s) => s.id === fixedSlotId);
+      const { data, error } = await supabase.functions.invoke('priority-spots', {
+        body: spot
+          ? { action: 'claim', weekday: spot.day_of_week, start_time: spot.start_time.slice(0, 5), interval: 1 }
+          : { action: 'claim' },
       });
       const err = (data as any)?.error;
       if (error || err) {

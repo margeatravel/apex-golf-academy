@@ -5,8 +5,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { InternalHeader } from '@/components/InternalHeader';
 import { SocialFooter } from '@/components/SocialFooter';
-import { FixedScheduleCalendar, FixedSlot, fmtSlotTime } from '@/components/FixedScheduleCalendar';
-import { Lock, Sparkles, ArrowRight, CalendarCheck, Loader2 } from 'lucide-react';
+import { fmtSlotTime } from '@/components/FixedScheduleCalendar';
+import { Lock, Sparkles, ArrowRight, CalendarCheck, Loader2, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,48 +15,58 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 
-const WEEKDAYS_FULL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+/** Offers from the priority-spots edge function (coach-scoped, cadence-aware). */
+type Offer = { interval: number; phases: string[] };
+type SpotWindow = {
+  key: string;
+  weekday: number;
+  start_time: string;
+  duration_minutes: number;
+  lesson_type: string | null;
+  source: 'open' | 'alternating';
+  offers: Offer[];
+};
+type MySlot = { weekday: number; start_time: string; interval: number; anchor: string | null };
 
-/** Default coach used by the set_coach_id_default trigger and the booking edge functions. */
-const DEFAULT_COACH_ID = '13480fb4-e4d2-423c-b035-c65846b061fc';
+function fmtDate(iso: string, lang: string): string {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(lang === 'es' ? 'es-MX' : 'en-US', {
+    weekday: 'short', day: 'numeric', month: 'short',
+  });
+}
 
 export default function StudentFixedSchedule() {
   const { profile, effectivePlan } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const es = language === 'es';
   const weekdays = t('misc.notifDayNames').split(',');
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [pendingClaim, setPendingClaim] = useState<FixedSlot | null>(null);
+  const [pending, setPending] = useState<SpotWindow | null>(null);
+  const [interval, setIntervalWeeks] = useState<number>(1);
+  const [phases, setPhases] = useState<string[]>([]);
   const [claiming, setClaiming] = useState(false);
 
   const hasPaidPlan =
     effectivePlan === 'scratch' || effectivePlan === 'pro' || effectivePlan === 'apex';
 
-  const { data: slots = [], isLoading } = useQuery({
-    queryKey: ['fixed-schedule-slots', profile?.id],
+  const cadenceLabel = (n: number) =>
+    n === 1 ? (es ? 'Semanal' : 'Weekly') : es ? `Cada ${n} semanas` : `Every ${n} weeks`;
+
+  const { data, isLoading } = useQuery({
+    queryKey: ['priority-spots', profile?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('fixed_schedule_slots')
-        .select('id, day_of_week, start_time, duration_minutes, lesson_type, student_id, is_available, notes, specific_date, coach_id')
-        .order('day_of_week', { ascending: true })
-        .order('start_time', { ascending: true });
-      if (error) throw error;
-      // Hide one-time open spots whose date has already passed.
-      const today = new Date().toISOString().slice(0, 10);
-      // Only the student's own coach's spots (assigned_coach_id, else the
-      // default coach — same scoping as get-available-slots / book-lesson),
-      // and an unclaimed spot only while the coach has it marked available.
-      const myCoachId = (profile as any)?.assigned_coach_id ?? DEFAULT_COACH_ID;
-      return (data ?? []).filter(
-        (s: any) =>
-          (!s.specific_date || String(s.specific_date).slice(0, 10) >= today) &&
-          (s.coach_id ?? DEFAULT_COACH_ID) === myCoachId &&
-          (s.student_id != null || s.is_available === true),
-      ) as FixedSlot[];
+      const { data, error } = await supabase.functions.invoke('priority-spots', {
+        body: { action: 'list', studentId: profile?.id },
+      });
+      if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
+      return data as { windows: SpotWindow[]; mine: MySlot[] };
     },
-    enabled: !!profile?.id,
+    enabled: !!profile?.id && hasPaidPlan,
   });
+  const windows = data?.windows ?? [];
+  const mine = data?.mine ?? [];
 
   // Locked view for free/member
   if (!hasPaidPlan) {
@@ -95,28 +105,47 @@ export default function StudentFixedSchedule() {
     );
   }
 
-  const myClaimedSlot = slots.find((s) => s.student_id === profile?.id);
+  const openDialog = (w: SpotWindow) => {
+    const first = w.offers[0];
+    setPending(w);
+    setIntervalWeeks(first.interval);
+    setPhases([first.phases[0]]);
+  };
+  const currentOffer = pending?.offers.find((o) => o.interval === interval) ?? null;
+  const pickInterval = (n: number) => {
+    const o = pending?.offers.find((x) => x.interval === n);
+    setIntervalWeeks(n);
+    setPhases(o ? [o.phases[0]] : []);
+  };
+  const togglePhase = (p: string) => {
+    if (interval === 1) return setPhases([p]);
+    setPhases((cur) => (cur.includes(p) ? cur.filter((x) => x !== p) : [...cur, p]));
+  };
 
   const handleClaim = async () => {
-    if (!pendingClaim || !profile?.id) return;
+    if (!pending || !profile?.id || phases.length === 0) return;
     setClaiming(true);
     try {
-      // Server-side: validates the paid plan with get_effective_plan and claims
-      // the slot atomically so two students can't take the same spot.
-      const { data, error } = await supabase.functions.invoke('claim-recurring-slot', {
-        body: { slotId: pendingClaim.id },
-      });
-      if (error || (data as any)?.error) {
-        throw new Error((data as any)?.message || error?.message || 'claim failed');
+      // Student previews run on the coach's session — never claim for the coach.
+      const { data: sess } = await supabase.auth.getSession();
+      if (sess.session?.user.id !== profile.id) {
+        throw new Error(es ? 'Vista previa: no se puede apartar un horario.' : 'Preview mode: spots cannot be claimed.');
       }
+      // Server re-validates plan, coach and cadence conflicts, then creates the
+      // recurring slot(s) and generates the lessons.
+      const { data: res, error } = await supabase.functions.invoke('priority-spots', {
+        body: { action: 'claim', weekday: pending.weekday, start_time: pending.start_time, interval, phases },
+      });
+      if (error || (res as any)?.error) {
+        throw new Error((res as any)?.message || error?.message || 'claim failed');
+      }
+      const day = weekdays[pending.weekday];
+      const time = fmtSlotTime(pending.start_time);
       toast({
         title: t('misc.fixedScheduleSpotSecuredTitle'),
-        description: t('misc.fixedScheduleSpotSecuredDesc')
-          .replace('{day}', weekdays[pendingClaim.day_of_week])
-          .replace('{time}', fmtSlotTime(pendingClaim.start_time)),
+        description: `${day} ${time} · ${cadenceLabel(interval)}`,
       });
 
-      // Send confirmation email — non-blocking
       if (profile?.email) {
         supabase.functions
           .invoke('send-notification-email', {
@@ -124,28 +153,27 @@ export default function StudentFixedSchedule() {
               to: profile.email,
               studentName: profile.full_name || 'there',
               notificationType: 'priority_spot_claimed',
-              spotDay: weekdays[pendingClaim.day_of_week],
-              spotTime: fmtSlotTime(pendingClaim.start_time),
+              spotDay: day,
+              spotTime: time,
             },
           })
           .catch((err) => console.warn('Priority spot email failed:', err));
       }
-
-      // Notify admin — non-blocking
       supabase.functions
         .invoke('notify-admin', {
           body: {
             eventType: 'priority_spot_claimed',
             studentName: profile?.full_name || profile?.email || 'A student',
             studentEmail: profile?.email,
-            spotDay: weekdays[pendingClaim.day_of_week],
-            spotTime: fmtSlotTime(pendingClaim.start_time),
+            spotDay: day,
+            spotTime: `${time} (${cadenceLabel(interval)})`,
           },
         })
         .catch((err) => console.warn('Admin notify (priority spot) failed:', err));
 
-      setPendingClaim(null);
-      queryClient.invalidateQueries({ queryKey: ['fixed-schedule-slots'] });
+      setPending(null);
+      queryClient.invalidateQueries({ queryKey: ['priority-spots'] });
+      queryClient.invalidateQueries({ queryKey: ['visible-recurring-slots'] });
       queryClient.invalidateQueries({ queryKey: ['all-lessons'] });
       queryClient.invalidateQueries({ queryKey: ['upcoming-lessons'] });
     } catch (e: any) {
@@ -159,15 +187,17 @@ export default function StudentFixedSchedule() {
     }
   };
 
+  const byDay = [0, 1, 2, 3, 4, 5, 6]
+    .map((d) => ({ d, items: windows.filter((w) => w.weekday === d) }))
+    .filter((g) => g.items.length > 0);
+
   return (
     <div className="app-bg min-h-screen">
       <InternalHeader titleKey="admin.prioritySpotTitle" subtitleKey="admin.prioritySpotStudentSubPick" backTo="/lessons" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {myClaimedSlot && (
-          <div className="glass-card p-4 sm:p-5 flex items-start gap-4" style={{
-            borderColor: 'rgba(240,192,64,0.35)',
-          }}>
+        {mine.length > 0 && (
+          <div className="glass-card p-4 sm:p-5 flex items-start gap-4" style={{ borderColor: 'rgba(240,192,64,0.35)' }}>
             <div className="h-10 w-10 shrink-0 rounded-xl bg-gold-accent/15 border border-gold-accent/30 flex items-center justify-center">
               <CalendarCheck className="h-5 w-5 text-gold-accent" />
             </div>
@@ -175,9 +205,11 @@ export default function StudentFixedSchedule() {
               <p className="text-ivory font-heading font-semibold text-sm sm:text-base">
                 {t('misc.fixedScheduleConfirmedTitle')}
               </p>
-              <p className="text-ivory/70 text-sm mt-0.5">
-                {weekdays[myClaimedSlot.day_of_week]} at {fmtSlotTime(myClaimedSlot.start_time)} · {myClaimedSlot.duration_minutes} {t('misc.fixedScheduleMinShort')}
-              </p>
+              {mine.map((m, i) => (
+                <p key={i} className="text-ivory/70 text-sm mt-0.5">
+                  {weekdays[m.weekday]} · {fmtSlotTime(m.start_time)} · {cadenceLabel(m.interval)}
+                </p>
+              ))}
               <p className="text-ivory/40 text-xs mt-1">
                 {t('misc.fixedScheduleContactToChange').replace('{coach}', t('common.yourCoach'))}
               </p>
@@ -185,66 +217,140 @@ export default function StudentFixedSchedule() {
           </div>
         )}
 
-        {!myClaimedSlot && (
-          <div className="glass-card p-4 sm:p-5">
-            <p className="text-ivory font-heading font-semibold text-sm sm:text-base">
-              {t('misc.fixedScheduleChooseWeeklySpot')}
-            </p>
-            <p className="text-ivory/60 text-xs sm:text-sm mt-1">
-              {t('misc.fixedScheduleTapGreen')
-                .split('{green}')
-                .map((part, i) => (
-                  <span key={i}>
-                    {i > 0 && <span className="text-green-accent">{t('misc.fixedScheduleGreen')}</span>}
-                    {part.replace('{coach}', t('common.yourCoach'))}
-                  </span>
-                ))}
-            </p>
-          </div>
-        )}
+        <div className="glass-card p-4 sm:p-5">
+          <p className="text-ivory font-heading font-semibold text-sm sm:text-base">
+            {t('misc.fixedScheduleChooseWeeklySpot')}
+          </p>
+          <p className="text-ivory/60 text-xs sm:text-sm mt-1">
+            {es
+              ? 'Toca un horario y elige si vienes cada semana, cada 2 o cada 3 semanas. Los horarios "cada N semanas" se alternan con otros alumnos.'
+              : 'Tap a spot and choose weekly, every 2 or every 3 weeks. "Every N weeks" spots alternate with other students.'}
+          </p>
+        </div>
 
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-ivory/60" />
           </div>
-        ) : slots.length === 0 ? (
+        ) : byDay.length === 0 ? (
           <div className="glass-card p-12 text-center">
             <p className="text-ivory/70 font-medium">{t('misc.fixedScheduleNoneYetTitle')}</p>
-            <p className="text-sm text-ivory/40 mt-2">
-              {t('misc.fixedScheduleNoneYetDesc')}
-            </p>
+            <p className="text-sm text-ivory/40 mt-2">{t('misc.fixedScheduleNoneYetDesc')}</p>
           </div>
         ) : (
-          <FixedScheduleCalendar
-            slots={slots}
-            variant="student"
-            currentUserId={profile?.id}
-            onSlotClick={myClaimedSlot ? undefined : (s) => setPendingClaim(s)}
-          />
+          <div className="space-y-4">
+            {byDay.map((g) => (
+              <div key={g.d} className="glass-card p-4 sm:p-5">
+                <p className="text-ivory font-heading font-semibold">{weekdays[g.d]}</p>
+                <div className="mt-3 space-y-3">
+                  {g.items.map((w) => (
+                    <button
+                      key={w.key}
+                      type="button"
+                      onClick={() => openDialog(w)}
+                      className="w-full text-left rounded-2xl border px-4 py-3 transition-colors hover:bg-white/5"
+                      style={{ background: 'rgba(74,124,89,0.10)', borderColor: 'rgba(74,124,89,0.35)' }}
+                    >
+                      <p className="text-ivory font-heading text-lg">{fmtSlotTime(w.start_time)}</p>
+                      <p className="text-ivory/50 text-xs mt-0.5">
+                        {w.duration_minutes} {t('misc.fixedScheduleMinShort')}{w.lesson_type ? ` · ${w.lesson_type}` : ''}
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {w.offers.map((o) => (
+                          <span
+                            key={o.interval}
+                            className="text-[11px] px-2 py-0.5 rounded-full inline-flex items-center gap-1"
+                            style={o.interval === 1
+                              ? { background: 'rgba(74,124,89,0.25)', color: '#7CC598' }
+                              : { background: 'rgba(240,192,64,0.15)', color: '#F0C040' }}
+                          >
+                            {o.interval > 1 && <Repeat className="h-3 w-3" />}
+                            {cadenceLabel(o.interval)}
+                          </span>
+                        ))}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </main>
 
       <SocialFooter />
 
-      <AlertDialog open={!!pendingClaim} onOpenChange={(o) => !o && setPendingClaim(null)}>
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>{t('misc.fixedScheduleClaimTitle')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {pendingClaim && (
-                <>
-                  {t('misc.fixedScheduleClaimDescPrefix')} <strong>{weekdays[pendingClaim.day_of_week]} at {fmtSlotTime(pendingClaim.start_time)}</strong> ({pendingClaim.duration_minutes} {t('misc.fixedScheduleMinShort')}) {t('misc.fixedScheduleClaimDescMid').replace('{coach}', t('common.yourCoach'))}
-                  <br /><br />
+            <AlertDialogDescription asChild>
+              <div className="space-y-4 text-left">
+                {pending && (
+                  <p>
+                    <strong>{weekdays[pending.weekday]} · {fmtSlotTime(pending.start_time)}</strong> ({pending.duration_minutes} {t('misc.fixedScheduleMinShort')})
+                  </p>
+                )}
+                <div>
+                  <p className="text-xs uppercase tracking-wide mb-2">{es ? 'Frecuencia' : 'Frequency'}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {pending?.offers.map((o) => (
+                      <button
+                        key={o.interval}
+                        type="button"
+                        onClick={() => pickInterval(o.interval)}
+                        className="px-3 py-1.5 rounded-full border text-sm"
+                        style={interval === o.interval
+                          ? { background: '#F0C040', color: '#000', borderColor: '#F0C040' }
+                          : { borderColor: 'rgba(255,255,255,0.2)' }}
+                      >
+                        {cadenceLabel(o.interval)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                {currentOffer && (
+                  <div>
+                    <p className="text-xs uppercase tracking-wide mb-2">
+                      {interval === 1
+                        ? (es ? 'Empiezas' : 'Starts')
+                        : (es ? 'Semanas que tomas (puedes elegir más de una)' : 'Weeks you take (pick one or more)')}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {currentOffer.phases.map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => togglePhase(p)}
+                          className="px-3 py-1.5 rounded-xl border text-sm"
+                          style={phases.includes(p)
+                            ? { background: 'rgba(74,124,89,0.35)', borderColor: '#7CC598' }
+                            : { borderColor: 'rgba(255,255,255,0.2)' }}
+                        >
+                          {fmtDate(p, language)}
+                        </button>
+                      ))}
+                    </div>
+                    {interval > 1 && (
+                      <p className="text-xs mt-2 opacity-70">
+                        {es
+                          ? `Cada fecha que elijas se repite cada ${interval} semanas.`
+                          : `Each date you pick repeats every ${interval} weeks.`}
+                      </p>
+                    )}
+                  </div>
+                )}
+                <p className="text-xs opacity-70">
                   {t('misc.fixedScheduleClaimDescOnlyRelease').replace('{coach}', t('common.yourCoach'))}
-                </>
-              )}
+                </p>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={claiming}>{t('misc.fixedScheduleCancel')}</AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleClaim}
-              disabled={claiming}
+              onClick={(e) => { e.preventDefault(); handleClaim(); }}
+              disabled={claiming || phases.length === 0}
               className="bg-gold-accent text-black hover:bg-gold-accent/90"
             >
               {claiming && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
