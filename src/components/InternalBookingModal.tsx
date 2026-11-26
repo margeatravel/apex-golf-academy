@@ -73,6 +73,10 @@ type FixedSlotRow = {
 };
 type PkgRow = { id: string; classes_remaining: number; package_size: number | null };
 
+
+/** Default coach used by the set_coach_id_default trigger and the booking edge functions. */
+const DEFAULT_COACH_ID = '13480fb4-e4d2-423c-b035-c65846b061fc';
+
 export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillTime }: InternalBookingModalProps) {
   const { profile, effectivePlan, previewCoachPricingId } = useAuth();
   const { t, language } = useLanguage();
@@ -165,13 +169,18 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fixed_schedule_slots')
-        .select('id, day_of_week, start_time, duration_minutes, lesson_type, specific_date')
+        .select('id, day_of_week, start_time, duration_minutes, lesson_type, specific_date, coach_id')
         .is('student_id', null)
         .eq('is_available', true)
         .order('day_of_week', { ascending: true })
         .order('start_time', { ascending: true });
       if (error) throw error;
-      return (data ?? []).filter((s: any) => !s.specific_date) as FixedSlotRow[];
+      // Only the student's own coach's spots (assigned_coach_id, else the
+      // default coach — same scoping as get-available-slots / book-lesson).
+      const myCoachId = (profile as any)?.assigned_coach_id ?? DEFAULT_COACH_ID;
+      return (data ?? []).filter(
+        (s: any) => !s.specific_date && (s.coach_id ?? DEFAULT_COACH_ID) === myCoachId,
+      ) as FixedSlotRow[];
     },
   });
 
