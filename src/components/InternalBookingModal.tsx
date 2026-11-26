@@ -466,7 +466,7 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="h-[100dvh] w-[100vw] max-w-none sm:h-auto sm:max-h-[90vh] sm:w-auto sm:max-w-2xl flex flex-col p-0 gap-0 overflow-hidden glass-card"
+        className="h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-none rounded-3xl sm:h-auto sm:max-h-[90vh] sm:w-auto sm:max-w-2xl flex flex-col p-0 gap-0 overflow-hidden glass-card"
         style={{ paddingTop: 0, paddingBottom: 0 }}
       >
         <DialogHeader
