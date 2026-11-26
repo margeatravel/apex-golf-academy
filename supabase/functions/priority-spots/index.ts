@@ -181,6 +181,53 @@ async function buildOffers(admin: any, studentId: string) {
   return { coachId, windows: list, mine };
 }
 
+/** Next date >= tomorrow on the same cadence phase as `start` (every `n` weeks). */
+function rollForward(start: string, n: number): string {
+  const tomorrow = addDays(todayCancun(), 1);
+  let d = start;
+  while (d < tomorrow) d = addDays(d, 7 * Math.max(1, n));
+  return d;
+}
+
+// deno-lint-ignore no-explicit-any
+async function notify(admin: any, userIds: string[], row: Record<string, unknown>) {
+  const ids = [...new Set(userIds.filter(Boolean))];
+  if (!ids.length) return;
+  try {
+    await admin.from("notifications").insert(ids.map((user_id) => ({ user_id, ...row })));
+  } catch (e) {
+    console.warn("notification insert failed", e);
+  }
+}
+
+// deno-lint-ignore no-explicit-any
+async function adminIds(admin: any): Promise<string[]> {
+  const { data } = await admin.from("user_roles").select("user_id").eq("role", "admin");
+  return (data || []).map((a: any) => a.user_id);
+}
+
+const DAYS_EN = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+const DAYS_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+
+/** Active recurring slots of `coachId` overlapping (weekday, start, duration). */
+// deno-lint-ignore no-explicit-any
+async function occupantsFor(admin: any, coachId: string, weekday: number, start: string, duration: number) {
+  const today = todayCancun();
+  const { data } = await admin
+    .from("recurring_lesson_slots")
+    .select("id, student_id, weekday, start_time, duration_minutes, lesson_type, coach_id, interval_weeks, interval_anchor, ends_on")
+    .eq("is_active", true)
+    .eq("weekday", weekday);
+  const s0 = toMin(start);
+  const e0 = s0 + duration;
+  return (data || []).filter((r: any) => {
+    if ((r.coach_id ?? DEFAULT_COACH_ID) !== coachId) return false;
+    if (r.ends_on && String(r.ends_on).slice(0, 10) < today) return false;
+    const s = toMin(r.start_time);
+    return s < e0 && s0 < s + durOf(r);
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
   try {
@@ -204,7 +251,184 @@ serve(async (req) => {
         if (roleRow) studentId = String(body.studentId);
       }
       const { windows, mine } = await buildOffers(admin, studentId);
-      return json({ windows, mine });
+      const { data: requests } = await admin
+        .from("priority_spot_requests")
+        .select("id, weekday, start_time, interval_weeks, start_date, status, created_at")
+        .eq("student_id", studentId)
+        .in("status", ["pending", "rejected"])
+        .order("created_at", { ascending: false })
+        .limit(10);
+      return json({ windows, mine, requests: requests || [] });
+    }
+
+    // ── Student: request a spot that isn't offered (day/time/cadence). ──
+    if (action === "request") {
+      const studentId = callerId;
+      const { data: planRow } = await admin.rpc("get_effective_plan", { _user_id: studentId });
+      if (!PAID_TIERS.includes(String(planRow ?? "free"))) {
+        return json({ error: "plan_required", message: "A Scratch, Pro or Apex Level membership is required for a priority spot." }, 403);
+      }
+      const startDate = String(body?.start_date ?? "").slice(0, 10);
+      const startTime = hhmm(String(body?.start_time ?? ""));
+      const interval = Number(body?.interval);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{2}:\d{2}$/.test(startTime) || !CADENCES.includes(interval)) {
+        return json({ error: "invalid_request", message: "Invalid date, time or frequency." }, 400);
+      }
+      if (startDate <= todayCancun()) {
+        return json({ error: "invalid_request", message: "Pick a start date from tomorrow on." }, 400);
+      }
+      const { data: prof } = await admin.from("profiles").select("assigned_coach_id, full_name, email").eq("id", studentId).maybeSingle();
+      const coachId = (prof?.assigned_coach_id as string | null) ?? DEFAULT_COACH_ID;
+      const weekday = parseUTC(startDate).getUTCDay();
+      const { count } = await admin
+        .from("priority_spot_requests").select("id", { count: "exact", head: true })
+        .eq("student_id", studentId).eq("status", "pending");
+      if ((count ?? 0) >= 3) {
+        return json({ error: "too_many", message: "You already have 3 pending requests." }, 409);
+      }
+      const { data: reqRow, error: reqErr } = await admin
+        .from("priority_spot_requests")
+        .insert({
+          student_id: studentId, coach_id: coachId, weekday, start_time: startTime,
+          duration_minutes: 60, lesson_type: "Range", interval_weeks: interval, start_date: startDate,
+          notes: body?.notes ? String(body.notes).slice(0, 500) : null,
+        })
+        .select("id")
+        .single();
+      if (reqErr) return json({ error: "request_failed", message: reqErr.message }, 500);
+      const name = prof?.full_name || prof?.email || "A student";
+      const cad = interval === 1 ? "weekly" : `every ${interval} weeks`;
+      await notify(admin, [coachId, ...(await adminIds(admin))], {
+        type: "priority_spot_request",
+        title: "Priority spot request",
+        message: `${name} requested ${DAYS_EN[weekday]} ${startTime} (${cad}, from ${startDate}).`,
+        link: "/admin/fixed-schedule",
+        metadata: { request_id: reqRow.id, student_id: studentId },
+      });
+      return json({ ok: true, id: reqRow.id });
+    }
+
+    // ── Student: cancel own pending request. ──
+    if (action === "cancel_request") {
+      await admin.from("priority_spot_requests")
+        .update({ status: "cancelled", decided_at: new Date().toISOString() })
+        .eq("id", String(body?.id ?? "")).eq("student_id", callerId).eq("status", "pending");
+      return json({ ok: true });
+    }
+
+    // ── Coach/admin: list requests. ──
+    if (action === "requests" || action === "decide") {
+      const { data: roles } = await admin.from("user_roles").select("role").eq("user_id", callerId);
+      const isAdmin = (roles || []).some((r: any) => r.role === "admin");
+      const isCoach = (roles || []).some((r: any) => r.role === "coach");
+      if (!isAdmin && !isCoach) return json({ error: "forbidden" }, 403);
+
+      if (action === "requests") {
+        const coachScope = String(body?.coachId || callerId);
+        let q = admin
+          .from("priority_spot_requests")
+          .select("id, student_id, coach_id, weekday, start_time, duration_minutes, lesson_type, interval_weeks, start_date, notes, status, created_at")
+          .eq("status", "pending")
+          .order("created_at", { ascending: true });
+        q = isAdmin && body?.coachId ? q.eq("coach_id", coachScope) : isAdmin ? q : q.eq("coach_id", callerId);
+        const { data: reqs } = await q;
+        const ids = [...new Set((reqs || []).map((r: any) => r.student_id))];
+        const { data: profs } = ids.length
+          ? await admin.from("profiles").select("id, full_name, email").in("id", ids)
+          : { data: [] };
+        const byId = new Map((profs || []).map((p: any) => [p.id, p]));
+        const out = [];
+        for (const r of reqs || []) {
+          const start = rollForward(String(r.start_date).slice(0, 10), r.interval_weeks);
+          const occ = await occupantsFor(admin, r.coach_id ?? DEFAULT_COACH_ID, r.weekday, hhmm(r.start_time), r.duration_minutes || 60);
+          const conflicts = occ
+            .filter((o: any) => o.student_id !== r.student_id &&
+              cadencesCollide(r.interval_weeks, r.interval_weeks > 1 ? start : null, Number(o.interval_weeks) || 1,
+                o.interval_anchor ? String(o.interval_anchor).slice(0, 10) : null))
+            .map((o: any) => o.student_id);
+          const { data: cprofs } = conflicts.length
+            ? await admin.from("profiles").select("full_name, email").in("id", conflicts)
+            : { data: [] };
+          out.push({
+            ...r,
+            start_time: hhmm(r.start_time),
+            effective_start: start,
+            student_name: (byId.get(r.student_id) as any)?.full_name || (byId.get(r.student_id) as any)?.email || "",
+            conflicts_with: (cprofs || []).map((p: any) => p.full_name || p.email),
+          });
+        }
+        return json({ requests: out });
+      }
+
+      // decide
+      const decision = String(body?.decision);
+      const { data: r } = await admin.from("priority_spot_requests").select("*").eq("id", String(body?.id ?? "")).maybeSingle();
+      if (!r || r.status !== "pending") return json({ error: "not_found", message: "Request not found or already decided." }, 404);
+      if (!isAdmin && r.coach_id !== callerId) return json({ error: "forbidden" }, 403);
+      const dayEs = DAYS_ES[r.weekday];
+      const time = hhmm(r.start_time);
+      const cadEs = r.interval_weeks === 1 ? "semanal" : `cada ${r.interval_weeks} semanas`;
+
+      if (decision === "reject") {
+        await admin.from("priority_spot_requests").update({
+          status: "rejected", decided_by: callerId, decided_at: new Date().toISOString(),
+          decision_note: body?.note ? String(body.note).slice(0, 500) : null,
+        }).eq("id", r.id).eq("status", "pending");
+        await notify(admin, [r.student_id], {
+          type: "priority_spot_request",
+          title: "Solicitud de horario",
+          message: `Tu Coach no pudo aprobar ${dayEs} ${time} (${cadEs}).${body?.note ? " " + String(body.note).slice(0, 200) : ""}`,
+          link: "/lessons/fixed-schedule",
+          metadata: { request_id: r.id, status: "rejected" },
+        });
+        return json({ ok: true, status: "rejected" });
+      }
+      if (decision !== "approve") return json({ error: "invalid_request" }, 400);
+
+      const coachId = r.coach_id ?? DEFAULT_COACH_ID;
+      const start = rollForward(String(r.start_date).slice(0, 10), r.interval_weeks);
+      const occ = await occupantsFor(admin, coachId, r.weekday, time, r.duration_minutes || 60);
+      const clash = occ.find((o: any) =>
+        cadencesCollide(r.interval_weeks, r.interval_weeks > 1 ? start : null, Number(o.interval_weeks) || 1,
+          o.interval_anchor ? String(o.interval_anchor).slice(0, 10) : null));
+      if (clash) {
+        return json({ error: "conflict", message: "That time now overlaps another student's recurring schedule." }, 409);
+      }
+      const { data: ins, error: insErr } = await admin.from("recurring_lesson_slots").insert({
+        student_id: r.student_id, weekday: r.weekday, start_time: time,
+        duration_minutes: r.duration_minutes || 60, lesson_type: r.lesson_type, is_active: true,
+        coach_id: coachId, starts_on: start, interval_weeks: r.interval_weeks,
+        interval_anchor: r.interval_weeks > 1 ? start : null, notes: "From Priority Spot request",
+      }).select("id").single();
+      if (insErr) return json({ error: "approve_failed", message: insErr.message }, 500);
+      // A weekly approval takes a matching open spot so it isn't offered twice.
+      if (r.interval_weeks === 1) {
+        await admin.from("fixed_schedule_slots")
+          .update({ student_id: r.student_id, is_available: false, claimed_at: new Date().toISOString() })
+          .eq("day_of_week", r.weekday).eq("start_time", time).eq("coach_id", coachId)
+          .is("student_id", null).is("specific_date", null);
+      }
+      await admin.from("priority_spot_requests").update({
+        status: "approved", decided_by: callerId, decided_at: new Date().toISOString(),
+        recurring_slot_id: ins.id, start_date: start,
+      }).eq("id", r.id);
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/generate-recurring-lessons`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${SERVICE_KEY}` },
+          body: JSON.stringify({ student_id: r.student_id }),
+        });
+      } catch (e) {
+        console.warn("generate-recurring-lessons failed", e);
+      }
+      await notify(admin, [r.student_id], {
+        type: "priority_spot_request",
+        title: "Horario aprobado",
+        message: `Tu Coach aprobó tu horario: ${dayEs} ${time} (${cadEs}), desde el ${start}.`,
+        link: "/lessons/fixed-schedule",
+        metadata: { request_id: r.id, status: "approved", recurring_slot_id: ins.id },
+      });
+      return json({ ok: true, status: "approved", start });
     }
 
     if (action !== "claim") return json({ error: "Unknown action" }, 400);

@@ -14,6 +14,7 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { RequestPrioritySpotDialog } from '@/components/priority/RequestPrioritySpotDialog';
 
 /** Offers from the priority-spots edge function (coach-scoped, cadence-aware). */
 type Offer = { interval: number; phases: string[] };
@@ -27,6 +28,7 @@ type SpotWindow = {
   offers: Offer[];
 };
 type MySlot = { weekday: number; start_time: string; interval: number; anchor: string | null };
+type MyRequest = { id: string; weekday: number; start_time: string; interval_weeks: number; start_date: string; status: 'pending' | 'rejected' };
 
 function fmtDate(iso: string, lang: string): string {
   const [y, m, d] = iso.split('-').map(Number);
@@ -47,6 +49,7 @@ export default function StudentFixedSchedule() {
   const [interval, setIntervalWeeks] = useState<number>(1);
   const [phases, setPhases] = useState<string[]>([]);
   const [claiming, setClaiming] = useState(false);
+  const [requestOpen, setRequestOpen] = useState(false);
 
   const hasPaidPlan =
     effectivePlan === 'scratch' || effectivePlan === 'pro' || effectivePlan === 'apex';
@@ -61,12 +64,23 @@ export default function StudentFixedSchedule() {
         body: { action: 'list', studentId: profile?.id },
       });
       if (error || (data as any)?.error) throw new Error((data as any)?.error || error?.message);
-      return data as { windows: SpotWindow[]; mine: MySlot[] };
+      return data as { windows: SpotWindow[]; mine: MySlot[]; requests: MyRequest[] };
     },
     enabled: !!profile?.id && hasPaidPlan,
   });
   const windows = data?.windows ?? [];
   const mine = data?.mine ?? [];
+  const myRequests = data?.requests ?? [];
+  // Student previews run on the Coach's session — never act for the Coach.
+  const isOwnSession = async () => {
+    const { data: sess } = await supabase.auth.getSession();
+    return sess.session?.user.id === profile?.id;
+  };
+  const cancelRequest = async (id: string) => {
+    if (!(await isOwnSession())) return;
+    await supabase.functions.invoke('priority-spots', { body: { action: 'cancel_request', id } });
+    queryClient.invalidateQueries({ queryKey: ['priority-spots'] });
+  };
 
   // Locked view for free/member
   if (!hasPaidPlan) {
@@ -127,8 +141,7 @@ export default function StudentFixedSchedule() {
     setClaiming(true);
     try {
       // Student previews run on the coach's session — never claim for the coach.
-      const { data: sess } = await supabase.auth.getSession();
-      if (sess.session?.user.id !== profile.id) {
+      if (!(await isOwnSession())) {
         throw new Error(es ? 'Vista previa: no se puede apartar un horario.' : 'Preview mode: spots cannot be claimed.');
       }
       // Server re-validates plan, coach and cadence conflicts, then creates the
@@ -228,6 +241,32 @@ export default function StudentFixedSchedule() {
           </p>
         </div>
 
+        <div className="glass-card p-4 sm:p-5 space-y-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-ivory/70 text-sm">
+              {es ? '¿No ves tu horario o la frecuencia que quieres?' : "Don't see your time or frequency?"}
+            </p>
+            <Button size="sm" variant="outline" onClick={() => setRequestOpen(true)}>
+              {es ? 'Pedir un horario' : 'Request a spot'}
+            </Button>
+          </div>
+          {myRequests.map((r) => (
+            <div key={r.id} className="flex items-center justify-between gap-3 text-sm">
+              <p className="text-ivory/70">
+                {weekdays[r.weekday]} · {fmtSlotTime(r.start_time)} · {cadenceLabel(r.interval_weeks)} ·{' '}
+                <span style={{ color: r.status === 'pending' ? '#F0C040' : '#E57373' }}>
+                  {r.status === 'pending' ? (es ? 'Pendiente' : 'Pending') : (es ? 'No aprobada' : 'Not approved')}
+                </span>
+              </p>
+              {r.status === 'pending' && (
+                <button type="button" className="text-xs text-ivory/50 underline" onClick={() => cancelRequest(r.id)}>
+                  {es ? 'Cancelar' : 'Cancel'}
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-6 w-6 animate-spin text-ivory/60" />
@@ -279,6 +318,13 @@ export default function StudentFixedSchedule() {
       </main>
 
       <SocialFooter />
+
+      <RequestPrioritySpotDialog
+        open={requestOpen}
+        onOpenChange={setRequestOpen}
+        canSubmit={isOwnSession}
+        onSent={() => queryClient.invalidateQueries({ queryKey: ['priority-spots'] })}
+      />
 
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>

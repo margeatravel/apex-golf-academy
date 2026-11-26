@@ -18,6 +18,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { HourPicker } from '@/components/HourPicker';
+import { PrioritySpotRequestsPanel } from '@/components/priority/PrioritySpotRequestsPanel';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -196,6 +197,7 @@ export default function AdminFixedSchedule() {
       <InternalHeader titleKey="admin.prioritySpotTitle" subtitleKey="admin.prioritySpotSub" backTo="/admin" />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
+        <PrioritySpotRequestsPanel coachId={isDemoModeActive() ? null : previewedCoachId} />
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
           <div className="flex gap-3">
             <div className="glass-card px-4 py-3 flex items-center gap-3">
