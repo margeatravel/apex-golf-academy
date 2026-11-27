@@ -336,6 +336,13 @@ export function StudentBottomNav() {
           // Anchor to the viewport bottom edge directly (no transform-based
           // centering): guarantees the bar never detaches mid-screen on iOS
           // when the visual viewport shifts during scroll.
+          // (Santiago, 26 nov 2026: en su iPad la píldora se quedaba
+          // flotando en medio de la página al hacer scroll.) Forzar su
+          // propia capa de composición para que iOS Safari no la deje
+          // atrás durante el scroll con inercia: sin esto, el `fixed`
+          // se repinta tarde y la barra aparece a media pantalla.
+          transform: 'translate3d(0, 0, 0)',
+          willChange: 'transform',
           paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
         }}
         aria-label={t('misc.navPrimary')}
