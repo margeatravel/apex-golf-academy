@@ -843,6 +843,47 @@ serve(async (req) => {
             const sub = await stripe.subscriptions.retrieve(invoice.subscription as string);
             const student = await findStudent(null, sub.customer as string, null);
             await upsertSubscription(sub, student);
+
+            // Record the renewal payment. checkout.session.completed only
+            // records the FIRST payment, so without this the renewals never
+            // appear in stripe_payments and the Revenue page misses them.
+            // upsertStripePayment is idempotent by payment intent id, so
+            // replaying this event cannot duplicate the row.
+            const paymentIntentId = invoice.payment_intent as string | null;
+            const amountPaid = invoice.amount_paid || 0;
+            if (paymentIntentId && amountPaid > 0) {
+              const item = sub.items.data[0];
+              const priceId = item?.price.id;
+              const productId = typeof item?.price.product === "string" ? item.price.product : undefined;
+              let productName = "Subscription";
+              try {
+                if (productId) {
+                  const prod = await stripe.products.retrieve(productId);
+                  productName = prod.name;
+                }
+              } catch (_) { /* ignore */ }
+              const paidAtUnix = invoice.status_transitions?.paid_at || invoice.created;
+              await upsertStripePayment({
+                paymentIntentId,
+                customerId: sub.customer as string,
+                studentId: student?.id,
+                studentEmail: student?.email,
+                studentName: student?.full_name,
+                productId,
+                priceId,
+                productName,
+                purchaseType: "subscription",
+                amount: amountPaid / 100,
+                currency: invoice.currency || "mxn",
+                status: "succeeded",
+                paidAt: paidAtUnix ? new Date(paidAtUnix * 1000).toISOString() : new Date().toISOString(),
+                studentMatched: !!student,
+                reportingCategory: "subscription",
+                metadata: { invoice_id: invoice.id, subscription_id: sub.id },
+              });
+            } else {
+              logStep("Skipping stripe_payment for invoice.paid", { invoiceId: invoice.id, hasPaymentIntent: !!paymentIntentId, amountPaid });
+            }
           } catch (e) {
             logStep("Could not refresh subscription on invoice.paid", { error: String(e) });
           }
