@@ -496,6 +496,63 @@ export default function StudentLessons() {
       }
     };
 
+    // Action buttons, defined once and composed differently for the featured
+    // hero (pills on their own row, calendar link below) vs. regular cards
+    // (single row). Every button is nowrap so no label ever wraps or overflows.
+    const calendarButton = (
+      <button
+        type="button"
+        onClick={() =>
+          openGoogleCalendar({
+            lessonDate: lesson.lesson_date,
+            lessonTime: lesson.lesson_time,
+            durationMinutes: lesson.duration_minutes ?? 60,
+            lessonType: lesson.lesson_type,
+            notes: lesson.student_notes,
+            coachLabel: t('common.yourCoach'),
+          })
+        }
+        className="inline-flex items-center gap-1 text-[11px] font-medium text-gold-accent hover:text-gold-accent/80 transition-colors whitespace-nowrap shrink-0"
+      >
+        <CalendarPlus className="h-3 w-3" />
+        {t('ui.studentLessons.addToCalendar')}
+      </button>
+    );
+    const changeButton = (
+      <button
+        type="button"
+        onClick={onRescheduleClick}
+        className={featured
+          ? `h-9 px-4 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold text-[#0d1f18] transition-transform active:scale-95 whitespace-nowrap ${tooSoonToCancel ? 'opacity-50' : ''}`
+          : `inline-flex items-center gap-1 text-[11px] font-medium transition-colors whitespace-nowrap ${
+            tooSoonToCancel
+              ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
+              : 'text-ivory/70 hover:text-ivory'
+          }`}
+        style={featured ? { background: '#F0C040' } : undefined}
+      >
+        <ArrowRightLeft className="h-3 w-3" />
+        {t('ui.studentLessons.change')}
+      </button>
+    );
+    const cancelButton = (
+      <button
+        type="button"
+        onClick={onCancelClick}
+        title={tooSoonToCancel ? 'Cancellations must be made at least 24 hours in advance' : undefined}
+        className={featured
+          ? `h-9 px-4 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold text-ivory transition-transform active:scale-95 border border-white/25 whitespace-nowrap ${tooSoonToCancel ? 'opacity-50' : ''}`
+          : `inline-flex items-center gap-1 text-[11px] font-medium transition-colors whitespace-nowrap ${
+            tooSoonToCancel
+              ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
+              : 'text-destructive/90 hover:text-destructive'
+          }`}
+      >
+        <X className="h-3 w-3" />
+        {t('ui.studentLessons.cancel')}
+      </button>
+    );
+
     return (
       <>
       <div
@@ -624,57 +681,23 @@ export default function StudentLessons() {
             {/* Cancel / Change lesson — only for upcoming, scheduled, non-skipped lessons */}
             {canCancel && lesson.status === 'scheduled' && !lesson.skipped && (
               <div className="mt-2.5 pt-2.5 border-t border-white/10">
-                <div className="flex items-center justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      openGoogleCalendar({
-                        lessonDate: lesson.lesson_date,
-                        lessonTime: lesson.lesson_time,
-                        durationMinutes: lesson.duration_minutes ?? 60,
-                        lessonType: lesson.lesson_type,
-                        notes: lesson.student_notes,
-                        coachLabel: t('common.yourCoach'),
-                      })
-                    }
-                    className="inline-flex items-center gap-1 text-[11px] font-medium text-gold-accent hover:text-gold-accent/80 transition-colors"
-                  >
-                    <CalendarPlus className="h-3 w-3" />
-                    {t('ui.studentLessons.addToCalendar')}
-                  </button>
-                  <div className="flex items-center gap-3">
-                    <button
-                      type="button"
-                      onClick={onRescheduleClick}
-                      className={featured
-                        ? `h-9 px-4 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold text-[#0d1f18] transition-transform active:scale-95 ${tooSoonToCancel ? 'opacity-50' : ''}`
-                        : `inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
-                          tooSoonToCancel
-                            ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
-                            : 'text-ivory/70 hover:text-ivory'
-                        }`}
-                      style={featured ? { background: '#F0C040' } : undefined}
-                    >
-                      <ArrowRightLeft className="h-3 w-3" />
-                      {t('ui.studentLessons.change')}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={onCancelClick}
-                      title={tooSoonToCancel ? 'Cancellations must be made at least 24 hours in advance' : undefined}
-                      className={featured
-                        ? `h-9 px-4 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold text-ivory transition-transform active:scale-95 border border-white/25 ${tooSoonToCancel ? 'opacity-50' : ''}`
-                        : `inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
-                          tooSoonToCancel
-                            ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
-                            : 'text-destructive/90 hover:text-destructive'
-                        }`}
-                    >
-                      <X className="h-3 w-3" />
-                      {t('ui.studentLessons.cancel')}
-                    </button>
+                {featured ? (
+                  <div className="space-y-2.5">
+                    <div className="flex items-center gap-2.5">
+                      {changeButton}
+                      {cancelButton}
+                    </div>
+                    {calendarButton}
                   </div>
-                </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-2">
+                    {calendarButton}
+                    <div className="flex items-center gap-3 shrink-0">
+                      {changeButton}
+                      {cancelButton}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             </div>

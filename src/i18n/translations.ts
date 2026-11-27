@@ -696,7 +696,7 @@ export const translations = {
       studentLessons: {
         skipped: 'Skipped',
         myNotes: 'My Notes',
-        addToCalendar: 'Add to Calendar',
+        addToCalendar: 'Calendar',
         change: 'Change',
         cancel: 'Cancel',
         confirmCancel: 'Are you sure you want to cancel this lesson?',
@@ -1754,7 +1754,7 @@ export const translations = {
       studentLessons: {
         skipped: 'Omitida',
         myNotes: 'Mis Notas',
-        addToCalendar: 'Agregar al Calendario',
+        addToCalendar: 'Calendario',
         change: 'Cambiar',
         cancel: 'Cancelar',
         confirmCancel: '¿Seguro que deseas cancelar esta clase?',
