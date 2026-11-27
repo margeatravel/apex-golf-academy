@@ -211,8 +211,8 @@ export function CoachBottomNav() {
           }}
         >
           {items.slice(0, 2).map(renderNavItem)}
-          {isCoachUser && renderPlusSlot()}
           {items.slice(2).map(renderNavItem)}
+          {isCoachUser && renderPlusSlot()}
         </div>
       </nav>
 
