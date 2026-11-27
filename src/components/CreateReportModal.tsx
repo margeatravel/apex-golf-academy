@@ -237,6 +237,7 @@ export function CreateReportModal({ open, onOpenChange, studentId, studentName, 
                 t('reports.generate')
               )}
             </Button>
+            <p className="text-xs text-center text-muted-foreground">{t('reports.generatingNote')}</p>
           </div>
         )}
       </DialogContent>
