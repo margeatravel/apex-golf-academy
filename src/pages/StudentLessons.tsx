@@ -5,7 +5,7 @@ import { useStudentPreview } from '@/contexts/StudentPreviewContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, FileText, ChevronDown, ChevronUp, Package, CheckCircle2, Play, Sparkles, ArrowRight, CalendarCheck, Lock, X, RefreshCw, CalendarPlus, ArrowRightLeft } from 'lucide-react';
+import { Calendar, Clock, FileText, ChevronDown, ChevronUp, Package, CheckCircle2, Play, Sparkles, ArrowRight, CalendarCheck, Lock, X, RefreshCw, CalendarPlus, ArrowRightLeft, Users } from 'lucide-react';
 import { InternalHeader } from '@/components/InternalHeader';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import { useNavigate } from 'react-router-dom';
@@ -414,6 +414,13 @@ export default function StudentLessons() {
         : new Date(`${lesson.lesson_date}T12:00:00-05:00`);
       return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'America/Cancun' }).format(d);
     })();
+    // Shared packages: say WHO this lesson is for — "Tú" for your own, first
+    // name for the other member. A lesson row has exactly one student_id.
+    const attendeeLabel = !isSharedPackageLesson
+      ? null
+      : lesson.student_id === profile?.id
+        ? t('ui.studentLessons.you')
+        : (memberNameById.get(lesson.student_id) || '').trim().split(/\s+/)[0] || null;
 
     // 24-hour cancellation policy. Lesson date/time are in Cancun (UTC-5).
     const lessonStartMs = (() => {
@@ -606,6 +613,12 @@ export default function StudentLessons() {
                 <Clock className="h-3 w-3" />
                 {formatLessonTime(lesson)} • {lesson.duration_minutes}m
               </div>
+              {attendeeLabel && (
+                <div className="text-ivory/60 text-xs flex items-center gap-1 mt-1">
+                  <Users className="h-3 w-3" />
+                  {attendeeLabel}
+                </div>
+              )}
               {isSharedPackageLesson && (
                 <span
                   className="text-[10px] px-2 py-0.5 rounded-full mt-1.5 inline-block"
