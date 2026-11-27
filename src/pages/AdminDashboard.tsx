@@ -766,7 +766,9 @@ export default function AdminDashboard() {
   const [studentSort, setStudentSort] = useState<'alpha' | 'package' | 'recent'>('recent');
   const [studentSearch, setStudentSearch] = useState('');
   const [studentsExpanded, setStudentsExpanded] = useState(false);
-  const [addToRecurringOpen, setAddToRecurringOpen] = useState(false);
+  // DISEÑO ANTERIOR — conservado por si Santiago quiere regresar (rediseño Home Coach, 27 nov 2026).
+  // El botón + de la tarjeta Horario Recurrente (stat grid) era el único que abría este modal.
+  // const [addToRecurringOpen, setAddToRecurringOpen] = useState(false);
   const [manualRefreshing, setManualRefreshing] = useState(false);
 
   // Refresh ALL cached coach data: today's lessons, calendar, students, stats.
@@ -852,6 +854,11 @@ export default function AdminDashboard() {
           totalStudents: demoStudents.length,
           activeSubscribers: demoSubscriptions.length,
           recurringSlots: demoRecurringSlots.length,
+          // Rediseño Home Coach (27 nov 2026): alumnos con paquete = alumnos
+          // demo con clases restantes en su paquete; con horario recurrente =
+          // alumnos distintos con al menos un slot recurrente demo activo.
+          studentsWithPackage: demoStudents.filter((s: any) => (s.activePackageRemaining ?? 0) > 0).length,
+          studentsWithRecurring: new Set(demoRecurringSlots.map((s: any) => s.student_id)).size,
           proZoneMediaCount: 24,
           pendingAnalysisCount: 3,
           upcomingLessonsCount: 28,
@@ -863,13 +870,15 @@ export default function AdminDashboard() {
       if (!isAdmin) {
         const scopedIds = (students || []).map((s: any) => s.id);
         let recurringCount = 0;
+        let studentsWithRecurring = 0;
         if (scopedIds.length > 0) {
-          const { count } = await supabase
+          const { data: recurringRows } = await supabase
             .from('recurring_lesson_slots')
-            .select('*', { count: 'exact', head: true })
+            .select('student_id')
             .eq('is_active', true)
             .in('student_id', scopedIds);
-          recurringCount = count || 0;
+          recurringCount = (recurringRows || []).length;
+          studentsWithRecurring = new Set((recurringRows || []).map((r: any) => r.student_id)).size;
         }
         return {
           totalLessons: 0,
@@ -879,6 +888,12 @@ export default function AdminDashboard() {
           totalStudents: students.length,
           activeSubscribers: 0,
           recurringSlots: recurringCount,
+          // Rediseño Home Coach (27 nov 2026): con paquete = alumnos del
+          // coach con paquete activo (clases restantes > 0, misma definición
+          // que la lista de alumnos); con horario recurrente = alumnos
+          // distintos con al menos un slot recurrente activo.
+          studentsWithPackage: (students || []).filter((s: any) => s.activePackageRemaining != null).length,
+          studentsWithRecurring,
           proZoneMediaCount: 0,
           pendingAnalysisCount: 0,
           upcomingLessonsCount: 0,
@@ -935,6 +950,14 @@ export default function AdminDashboard() {
 
       const { count: recurringSlots } = await supabase.from('recurring_lesson_slots').select('*', { count: 'exact', head: true }).eq('is_active', true);
 
+      // Rediseño Home Coach (27 nov 2026): alumnos distintos con al menos
+      // un slot recurrente activo (no el número de slots).
+      const { data: recurringStudentRows } = await supabase
+        .from('recurring_lesson_slots')
+        .select('student_id')
+        .eq('is_active', true);
+      const studentsWithRecurring = new Set((recurringStudentRows || []).map((r: any) => r.student_id)).size;
+
       const { count: proZoneMediaCount } = await supabase
         .from('pro_zone_media')
         .select('*', { count: 'exact', head: true })
@@ -961,6 +984,10 @@ export default function AdminDashboard() {
         totalStudents: students.length,
         activeSubscribers: activeSubscribers || 0,
         recurringSlots: recurringSlots || 0,
+        // Con paquete = alumnos con paquete activo (clases restantes > 0,
+        // misma definición que la lista de alumnos de esta página).
+        studentsWithPackage: students.filter((s: any) => s.activePackageRemaining != null).length,
+        studentsWithRecurring,
         proZoneMediaCount: proZoneMediaCount || 0,
         pendingAnalysisCount: pendingAnalysisCount || 0,
         upcomingLessonsCount: upcomingLessonsCount || 0,
@@ -969,6 +996,9 @@ export default function AdminDashboard() {
     enabled: isAdmin || students.length >= 0,
   });
 
+  /* DISEÑO ANTERIOR — conservado por si Santiago quiere regresar (rediseño Home Coach, 27 nov 2026).
+     Para restaurar: descomentar este array `statCards` y el bloque del stat grid en el JSX de abajo,
+     y quitar la tarjeta Suscriptores nueva.
   // Per-card accent tints (cardBg = subtle gradient overlay, iconBg = solid icon chip,
   // iconColor = icon glyph color). Glassmorphism preserved via `glass-card`.
   const statCards = [
@@ -989,6 +1019,37 @@ export default function AdminDashboard() {
       iconBg: 'rgba(240,192,64,0.22)', iconColor: '#F0C040',
       cardBg: 'linear-gradient(135deg, rgba(240,192,64,0.14) 0%, rgba(240,192,64,0.04) 100%)',
       borderColor: 'rgba(240,192,64,0.28)',
+    },
+  ];
+  */
+
+  // Suscriptores card cells (rediseño Home Coach, 27 nov 2026): reemplazan el
+  // stat grid de Números. Valores en vivo de la consulta admin-stats; los
+  // porcentajes son sobre el total de alumnos.
+  const totalStudentsCount = stats?.totalStudents || 0;
+  const pctOfTotal = (n: number) => (totalStudentsCount > 0 ? Math.round((100 * n) / totalStudentsCount) : 0);
+  const subscriberCells = [
+    {
+      label: t('admin.statTotalStudents'), value: String(totalStudentsCount), sub: t('admin.allSubscribersSub'),
+      icon: Users, link: '/admin/students',
+      iconBg: 'rgba(74,124,89,0.22)', iconColor: '#7FB88E', large: false,
+    },
+    {
+      label: t('admin.studentsWithPackage'), value: String(stats?.studentsWithPackage || 0),
+      sub: `${pctOfTotal(stats?.studentsWithPackage || 0)}% ${t('admin.ofTotal')} · ${t('admin.withClassesAvailable')}`,
+      icon: GraduationCap, link: '/admin/students',
+      iconBg: 'rgba(139,92,246,0.22)', iconColor: '#B89DF5', large: false,
+    },
+    {
+      label: t('admin.studentsRecurring'), value: String(stats?.studentsWithRecurring || 0),
+      sub: `${pctOfTotal(stats?.studentsWithRecurring || 0)}% ${t('admin.ofTotal')} · ${t('admin.comeEveryWeekFixed')}`,
+      icon: Repeat, link: '/admin/lessons?section=recurring',
+      iconBg: 'rgba(96,165,250,0.22)', iconColor: '#7FB8F5', large: false,
+    },
+    {
+      label: t('admin.monthRevenue'), value: fmtMXN(stats?.monthlyRevenue || 0), sub: t('admin.collectedThisMonth'),
+      icon: DollarSign, link: '/admin/revenue',
+      iconBg: 'rgba(240,192,64,0.22)', iconColor: '#F0C040', large: true,
     },
   ];
 
@@ -1022,7 +1083,7 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <main className="px-4 py-6 space-y-5 max-w-3xl mx-auto">
+      <main className="px-4 py-6 space-y-5 max-w-3xl mx-auto pb-mobile-safe">
         {/* Greeting — kept out of the sticky header so it can never overlap the nav */}
         <div>
           <p style={{ color: '#4a7c59', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
@@ -1036,7 +1097,10 @@ export default function AdminDashboard() {
         {/* Today's Schedule — compact */}
         <TodaySchedule />
 
-        {/* Stats Grid — Apple widget style with per-card color tints */}
+        {/* DISEÑO ANTERIOR — conservado por si Santiago quiere regresar (rediseño Home Coach, 27 nov 2026).
+            Stat grid de Números (tarjetas Alumnos Totales / Suscriptores / Ingresos MTD + tarjeta Horario Recurrente).
+            Para restaurar: quitar esta apertura y el cierre de abajo, descomentar el array `statCards`,
+            y quitar la tarjeta Suscriptores nueva.
         <div data-tour="stat-grid" className="flex sm:grid sm:grid-cols-2 gap-3 overflow-x-auto snap-x snap-mandatory -mx-4 px-4 sm:mx-0 sm:px-0 pb-1 [scrollbar-width:none]">
           {statCards.map((s) => {
             const isRevenue = s.label === t('admin.statRevenueMtd');
@@ -1081,7 +1145,7 @@ export default function AdminDashboard() {
             );
           })}
 
-          {/* Recurring Schedule — same-size stat card with embedded Add / Reassign actions */}
+          Recurring Schedule — same-size stat card with embedded Add / Reassign actions (línea dentro del comentario DISEÑO ANTERIOR; al restaurar, volver a envolverla en un comentario JSX)
           <Link to="/admin/lessons?section=recurring" className="block h-full shrink-0 w-[44%] sm:w-auto snap-start">
             <div
               data-tour="recurring-card"
@@ -1127,6 +1191,61 @@ export default function AdminDashboard() {
               </div>
             </div>
           </Link>
+        </div>
+        */}
+
+        {/* Suscriptores — rediseño Home Coach (27 nov 2026): reemplaza el stat grid de Números.
+            4 datos en vivo: total de alumnos · con paquete · con horario recurrente · ingresos del mes.
+            En teléfono se ve en 2×2, sin deslizar (como en la maqueta aprobada). */}
+        <div data-tour="subscribers-card" className="glass-card p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-xl flex items-center justify-center" style={{ background: '#4a7c59' }}>
+                <Users className="h-4 w-4" style={{ color: '#F5F0E8' }} />
+              </div>
+              <h3 style={{ color: '#F5F0E8', fontSize: 16, fontWeight: 600 }}>{t('admin.statSubscribers')}</h3>
+            </div>
+            <Link to="/admin/students" className="flex items-center gap-0.5 text-xs font-medium" style={{ color: '#E8D5B0', opacity: 0.7 }}>
+              {t('admin.viewStudents')}
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {subscriberCells.map((c) => {
+              const CellIcon = c.icon;
+              return (
+                <Link
+                  key={c.label}
+                  to={c.link}
+                  className="block rounded-xl p-3 hover:scale-[1.02] active:scale-[0.98] transition-transform"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      style={{
+                        color: '#F5F0E8',
+                        fontSize: c.large ? 18 : 24,
+                        fontWeight: 700,
+                        lineHeight: 1.1,
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {c.value}
+                    </p>
+                    <div className="h-8 w-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: c.iconBg }}>
+                      <CellIcon className="h-4 w-4" style={{ color: c.iconColor }} />
+                    </div>
+                  </div>
+                  <p className="mt-1.5" style={{ color: '#E8D5B0', opacity: 0.7, fontSize: 12, fontWeight: 600, lineHeight: 1.3 }}>
+                    {c.label}
+                  </p>
+                  <p className="mt-0.5" style={{ color: '#E8D5B0', opacity: 0.5, fontSize: 11, lineHeight: 1.35 }}>
+                    {c.sub}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
         </div>
 
         {/* Hero — live week-grid Calendar (single source of truth) */}
@@ -1323,6 +1442,7 @@ export default function AdminDashboard() {
 
       </main>
 
+      {/* DISEÑO ANTERIOR — conservado por si Santiago quiere regresar (rediseño Home Coach, 27 nov 2026).
       <AddToRecurringScheduleModal
         open={addToRecurringOpen}
         onOpenChange={setAddToRecurringOpen}
@@ -1332,6 +1452,7 @@ export default function AdminDashboard() {
           queryClient.invalidateQueries({ queryKey: ['upcoming-lessons'] });
         }}
       />
+      */}
 
       <SocialFooter />
     </div>

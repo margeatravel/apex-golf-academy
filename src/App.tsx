@@ -16,6 +16,7 @@ import CoachPreviewBanner from "@/components/CoachPreviewBanner";
 import { CoachFAB } from "@/components/CoachFAB";
 import { VideoUploadFAB } from "@/components/VideoUploadFAB";
 import { StudentBottomNav } from "@/components/StudentBottomNav";
+import { CoachBottomNav } from "@/components/CoachBottomNav";
 import { GuidedTour } from "@/components/GuidedTour";
 import { StaffUtilityBar } from "@/components/StaffUtilityBar";
 import Auth from "./pages/Auth";
@@ -140,6 +141,7 @@ const App = () => (
           <CoachFAB />
           <VideoUploadFAB />
           <StudentBottomNav />
+          <CoachBottomNav />
           <GuidedTour />
           <StaffUtilityBar />
           <Routes>

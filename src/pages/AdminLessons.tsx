@@ -240,7 +240,7 @@ export default function AdminLessons() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-6">
+      <main className="container mx-auto px-4 py-8 space-y-6 pb-mobile-safe">
         {/* Top-level section switcher */}
         <div className="flex items-center gap-2 p-1 rounded-lg bg-muted/50 w-fit flex-wrap">
           <Button

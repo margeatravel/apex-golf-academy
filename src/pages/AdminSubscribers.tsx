@@ -315,7 +315,7 @@ export default function AdminSubscribers() {
         </div>
       </header>
 
-      <main className="px-4 py-6 space-y-5 max-w-4xl mx-auto">
+      <main className="px-4 py-6 space-y-5 max-w-4xl mx-auto pb-mobile-safe">
         {/* Back */}
         <Button variant="ghost" size="sm" onClick={() => navigate('/admin')} className="gap-2 text-xs" style={{ color: '#E8D5B0', opacity: 0.7 }}>
           <ArrowLeft className="h-4 w-4" /> {t('money.backToDashboard')}

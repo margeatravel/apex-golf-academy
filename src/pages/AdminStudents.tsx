@@ -370,7 +370,7 @@ export default function AdminStudents() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8 space-y-6">
+      <main className="container mx-auto px-4 py-8 space-y-6 pb-mobile-safe">
         <Card className="card-elevated">
           <CardContent className="pt-6">
             <div className="flex flex-col sm:flex-row gap-4">

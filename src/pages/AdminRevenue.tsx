@@ -1130,7 +1130,7 @@ export default function AdminRevenue() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <main className="container mx-auto px-4 py-6 sm:py-8 space-y-6 sm:space-y-8 pb-mobile-safe">
         {hasMissingRevenue && (
           <Card className="border-warning/50 bg-warning/5">
             <CardContent className="py-4">
