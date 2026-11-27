@@ -46,7 +46,7 @@ export function CalendlyBooking({ prefillEmail, triggerButton }: CalendlyBooking
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-none rounded-3xl lg:h-[90vh] lg:w-auto lg:max-w-5xl flex flex-col p-0 gap-0 overflow-hidden glass-card">
+      <DialogContent className="h-[calc(100dvh-2rem)] w-[calc(100vw-1.5rem)] max-w-5xl lg:h-[90vh] lg:w-auto flex flex-col p-0 gap-0 overflow-hidden glass-card rounded-3xl lg:rounded-3xl">
         <DialogHeader className="shrink-0 px-6 pt-6 pb-4 border-b border-white/10">
           <DialogTitle className="text-ivory font-heading">Schedule Your Golf Lesson</DialogTitle>
           <DialogDescription className="text-ivory/60">

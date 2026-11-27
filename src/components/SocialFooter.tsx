@@ -8,22 +8,22 @@ export function SocialFooter() {
           <p className="text-xs text-ivory/40">Follow us & shop golf products</p>
           <div className="flex flex-wrap justify-center gap-4">
             <a
-              href="https://www.instagram.com/scgolfacademy"
+              href="https://www.instagram.com/margeagolfacademy"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-ivory/50 hover:text-gold-accent transition-colors"
             >
               <Instagram className="h-4 w-4" />
-              <span>@scgolfacademy</span>
+              <span>@margeagolfacademy</span>
             </a>
             <a
-              href="https://www.instagram.com/cancungolfproducts"
+              href="https://www.margeagolf.com"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-2 text-sm text-ivory/50 hover:text-gold-accent transition-colors"
             >
               <ShoppingBag className="h-4 w-4" />
-              <span>@cancungolfproducts</span>
+              <span>margeagolf.com</span>
             </a>
           </div>
         </div>

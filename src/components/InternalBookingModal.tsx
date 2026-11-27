@@ -73,10 +73,6 @@ type FixedSlotRow = {
 };
 type PkgRow = { id: string; classes_remaining: number; package_size: number | null };
 
-
-/** Default coach used by the set_coach_id_default trigger and the booking edge functions. */
-const DEFAULT_COACH_ID = '13480fb4-e4d2-423c-b035-c65846b061fc';
-
 export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillTime }: InternalBookingModalProps) {
   const { profile, effectivePlan, previewCoachPricingId } = useAuth();
   const { t, language } = useLanguage();
@@ -169,18 +165,13 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
     queryFn: async () => {
       const { data, error } = await supabase
         .from('fixed_schedule_slots')
-        .select('id, day_of_week, start_time, duration_minutes, lesson_type, specific_date, coach_id')
+        .select('id, day_of_week, start_time, duration_minutes, lesson_type, specific_date')
         .is('student_id', null)
         .eq('is_available', true)
         .order('day_of_week', { ascending: true })
         .order('start_time', { ascending: true });
       if (error) throw error;
-      // Only the student's own coach's spots (assigned_coach_id, else the
-      // default coach — same scoping as get-available-slots / book-lesson).
-      const myCoachId = (profile as any)?.assigned_coach_id ?? DEFAULT_COACH_ID;
-      return (data ?? []).filter(
-        (s: any) => !s.specific_date && (s.coach_id ?? DEFAULT_COACH_ID) === myCoachId,
-      ) as FixedSlotRow[];
+      return (data ?? []).filter((s: any) => !s.specific_date) as FixedSlotRow[];
     },
   });
 
@@ -350,13 +341,8 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
     if (!fixedSlotId) return;
     setSubmitting(true);
     try {
-      // priority-spots creates the recurring slot + lessons (claim-recurring-slot
-      // only marked the spot: its DB trigger skips service-role updates).
-      const spot = fixedSlots.find((s) => s.id === fixedSlotId);
-      const { data, error } = await supabase.functions.invoke('priority-spots', {
-        body: spot
-          ? { action: 'claim', weekday: spot.day_of_week, start_time: spot.start_time.slice(0, 5), interval: 1 }
-          : { action: 'claim' },
+      const { data, error } = await supabase.functions.invoke('claim-recurring-slot', {
+        body: { slotId: fixedSlotId },
       });
       const err = (data as any)?.error;
       if (error || err) {
@@ -466,12 +452,12 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="h-[calc(100dvh-1.5rem)] w-[calc(100vw-1.5rem)] max-w-none rounded-3xl sm:h-auto sm:max-h-[90vh] sm:w-auto sm:max-w-2xl flex flex-col p-0 gap-0 overflow-hidden glass-card"
+        className="max-h-[calc(100dvh-2rem)] w-[calc(100vw-1.5rem)] max-w-2xl sm:h-auto sm:max-h-[90vh] sm:w-auto flex flex-col p-0 gap-0 overflow-hidden glass-card rounded-3xl sm:rounded-3xl"
         style={{ paddingTop: 0, paddingBottom: 0 }}
       >
         <DialogHeader
           className="shrink-0 px-5 sm:px-6 pb-3 border-b border-white/10"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)' }}
+          style={{ paddingTop: '1.25rem' }}
         >
           <DialogTitle className="text-ivory font-heading flex items-center gap-2">
             <CalIcon className="h-5 w-5 text-gold-accent" />
@@ -483,7 +469,7 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
         </DialogHeader>
 
         {/* Step indicator */}
-        <div className="px-5 sm:px-6 py-2 flex items-center gap-2 text-xs text-ivory/50 border-b border-white/5">
+        <div className="shrink-0 px-5 sm:px-6 py-2 flex items-center gap-2 text-xs text-ivory/50 border-b border-white/5">
           <span className={mode === null ? 'text-gold-accent font-semibold' : ''}>{t('misc.bookingStepType')}</span>
           <ChevronRight className="h-3 w-3" />
           {mode === 'fixed' ? (
