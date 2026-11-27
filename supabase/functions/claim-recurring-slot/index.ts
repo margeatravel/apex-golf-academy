@@ -67,6 +67,79 @@ serve(async (req) => {
       );
     }
 
+    // ── Server-side recurring schedule limit (Santiago, 27 Nov 2026) ──
+    // The UI used to be the only brake: a student could claim a second spot
+    // by calling this function directly. Max distinct weekly schedules:
+    // Scratch 1, Pro 2, Apex 2. A claimed fixed spot and a coach-assigned
+    // recurring slot at the same weekday+time count as ONE schedule.
+    {
+      const maxSlots = plan === "scratch" ? 1 : 2;
+      const [fixedMine, recurringMine] = await Promise.all([
+        admin
+          .from("fixed_schedule_slots")
+          .select("day_of_week, start_time")
+          .eq("student_id", studentId)
+          .eq("is_available", false),
+        admin
+          .from("recurring_lesson_slots")
+          .select("weekday, start_time")
+          .eq("student_id", studentId)
+          .eq("is_active", true),
+      ]);
+      const keys = new Set<string>();
+      for (const r of fixedMine.data ?? []) {
+        keys.add(`${r.day_of_week}|${String(r.start_time).slice(0, 5)}`);
+      }
+      for (const r of recurringMine.data ?? []) {
+        keys.add(`${r.weekday}|${String(r.start_time).slice(0, 5)}`);
+      }
+      if (keys.size >= maxSlots) {
+        return json(
+          {
+            error: "slot_limit",
+            message:
+              plan === "scratch"
+                ? "Scratch members can hold one recurring schedule per week. Ask your coach to move it instead."
+                : "You already hold the maximum of two recurring schedules per week. Ask your coach to move one instead.",
+            plan,
+          },
+          409,
+        );
+      }
+    }
+
+    // ── Conflict priority (Santiago, 27 Nov 2026) ──
+    // If a Scratch/Pro/Apex student has a pending change request for this
+    // slot, a lower-plan student may not claim it out from under them — the
+    // coach reviews the queue first. (The plan gate above already keeps
+    // free/member/family students out of direct claims; this guard covers
+    // override / SC students who can claim through the DB trigger path.)
+    // Wrapped in try/catch: the table only exists once migration
+    // 20261127130000 is applied; until then the guard is skipped.
+    try {
+      const { data: pendingForSlot } = await admin
+        .from("recurring_slot_change_requests")
+        .select("plan_at_request")
+        .eq("target_slot_id", slotId)
+        .eq("status", "pending");
+      const hasPriorityRequest = (pendingForSlot ?? []).some((r: any) =>
+        ["scratch", "pro", "apex"].includes(String(r.plan_at_request ?? "").toLowerCase()),
+      );
+      if (hasPriorityRequest && !["scratch", "pro", "apex"].includes(plan)) {
+        return json(
+          {
+            error: "reserved_for_review",
+            message:
+              "This time is under review for a Scratch/Pro student. Your coach will confirm the schedule.",
+            plan,
+          },
+          409,
+        );
+      }
+    } catch (e) {
+      console.warn("priority guard skipped (change-requests table missing?)", e);
+    }
+
     // ── Minute-range conflict guard: an open spot that overlaps another
     // student's recurring slot or claimed spot cannot be claimed. ──
     {

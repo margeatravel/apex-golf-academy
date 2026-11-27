@@ -33,6 +33,8 @@ interface EmailRequest {
     | 'package_added'
     | 'subscription_confirmed'
     | 'priority_spot_claimed'
+    | 'recurring_change_approved'
+    | 'recurring_change_denied'
     | 'analysis_submitted'
     | 'lesson_booked'
     | 'lesson_skipped'
@@ -490,6 +492,9 @@ serve(async (req: Request): Promise<Response> => {
       package_added: "package_added",
       subscription_confirmed: "subscription_confirmed",
       priority_spot_claimed: "priority_spot_claimed",
+      // Schedule-change answers share the recurring-schedule email setting.
+      recurring_change_approved: "priority_spot_claimed",
+      recurring_change_denied: "priority_spot_claimed",
       analysis_submitted: "analysis_submitted",
       lesson_booked: "lesson_booked",
       lesson_skipped: "lesson_skipped",
@@ -530,6 +535,44 @@ serve(async (req: Request): Promise<Response> => {
       case "priority_spot_claimed":
         subject = t(lang, "subj_priority_spot");
         html = prioritySpotEmail(lang, name, spotDay || (lang === "es" ? "tu día" : "your day"), spotTime || (lang === "es" ? "tu hora" : "your time"));
+        break;
+      case "recurring_change_approved":
+        subject = lang === "es" ? "Tu cambio de horario fue aprobado ✅" : "Your schedule change was approved ✅";
+        html = brandedEmail({
+          preheader: lang === "es"
+            ? `Tu nuevo horario recurrente es ${spotDay || ""}`
+            : `Your new recurring schedule is ${spotDay || ""}`,
+          icon: "✅",
+          title: lang === "es" ? "Cambio aprobado" : "Change approved",
+          subtitle: lang === "es" ? "Tu horario recurrente cambió" : "Your recurring schedule changed",
+          greeting: lang === "es" ? `Hola ${name},` : `Hi ${name},`,
+          intro: lang === "es"
+            ? "Tu coach aprobó tu solicitud de cambio de horario."
+            : "Your coach approved your schedule change request.",
+          detailsHtml: cardRow(lang === "es" ? "Nuevo horario" : "New schedule", spotDay || "—"),
+          ctaText: t(lang, "view_lessons"),
+          ctaHref: `${APP_URL}/lessons`,
+          closingHtml: lang === "es" ? "Nos vemos en la práctica." : "See you on the range!",
+        });
+        break;
+      case "recurring_change_denied":
+        subject = lang === "es" ? "Tu cambio de horario no fue aprobado" : "Your schedule change was not approved";
+        html = brandedEmail({
+          preheader: lang === "es"
+            ? "Tu horario actual se mantiene"
+            : "Your current schedule stays as is",
+          icon: "❎",
+          title: lang === "es" ? "Cambio no aprobado" : "Change not approved",
+          subtitle: lang === "es" ? "Tu solicitud fue revisada" : "Your request was reviewed",
+          greeting: lang === "es" ? `Hola ${name},` : `Hi ${name},`,
+          intro: lang === "es"
+            ? "Tu coach revisó tu solicitud de cambio de horario y no la aprobó. Tu horario actual se mantiene."
+            : "Your coach reviewed your schedule change request and did not approve it. Your current schedule stays as is.",
+          detailsHtml: cardRow(lang === "es" ? "Horario pedido" : "Requested time", spotDay || "—"),
+          ctaText: t(lang, "view_lessons"),
+          ctaHref: `${APP_URL}/lessons`,
+          closingHtml: lang === "es" ? "Nos vemos en la práctica." : "See you on the range!",
+        });
         break;
       case "analysis_submitted":
         subject = t(lang, "subj_analysis");

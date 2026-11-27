@@ -2396,6 +2396,101 @@ export type Database = {
           },
         ]
       }
+      recurring_slot_change_requests: {
+        Row: {
+          coach_id: string | null
+          created_at: string
+          current_slot_id: string | null
+          current_slot_kind: string | null
+          effective_date: string | null
+          id: string
+          plan_at_request: string | null
+          request_type: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          student_id: string
+          target_duration_minutes: number
+          target_lesson_type: string | null
+          target_slot_id: string
+          target_start_time: string
+          target_weekday: number
+          updated_at: string
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string
+          current_slot_id?: string | null
+          current_slot_kind?: string | null
+          effective_date?: string | null
+          id?: string
+          plan_at_request?: string | null
+          request_type?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id: string
+          target_duration_minutes?: number
+          target_lesson_type?: string | null
+          target_slot_id: string
+          target_start_time: string
+          target_weekday: number
+          updated_at?: string
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string
+          current_slot_id?: string | null
+          current_slot_kind?: string | null
+          effective_date?: string | null
+          id?: string
+          plan_at_request?: string | null
+          request_type?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          student_id?: string
+          target_duration_minutes?: number
+          target_lesson_type?: string | null
+          target_slot_id?: string
+          target_start_time?: string
+          target_weekday?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_slot_change_requests_coach_id_fkey"
+            columns: ["coach_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_slot_change_requests_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_slot_change_requests_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_slot_change_requests_target_slot_id_fkey"
+            columns: ["target_slot_id"]
+            isOneToOne: false
+            referencedRelation: "fixed_schedule_slots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recurring_slot_package_link_log: {
         Row: {
           actor_id: string | null

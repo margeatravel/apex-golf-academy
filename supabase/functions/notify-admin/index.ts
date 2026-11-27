@@ -73,6 +73,7 @@ type EventType =
   | "lesson_cancelled"
   | "priority_spot_claimed"
   | "priority_spot_cancelled"
+  | "recurring_change_requested"
   | "subscription_started"
   | "subscription_cancelled"
   | "payment_received"
@@ -283,6 +284,27 @@ function build(p: NotifyPayload): BuildResult {
           cardRow("Time", timeLabel || "—") +
           cardRow("Status", "Spot released — now open for other students"),
         ctaText: "View Schedule",
+        ctaHref: `${APP_URL}/admin/fixed-schedule`,
+      };
+      }
+    case "recurring_change_requested":
+      {
+      const timeLabel = fmtTimeCancun(p.spotTime);
+      const dayTime = `${p.spotDay || "—"} · ${timeLabel || "—"}`;
+      const isSecond = (p.notes || "").toLowerCase().includes("second weekly");
+      return {
+        subject: `Schedule change requested: ${name} · ${dayTime}`.trim(),
+        icon: "🔄",
+        title: "Recurring schedule change requested",
+        subtitle: `${name} asked to ${isSecond ? "add a second weekly schedule" : "move their recurring schedule"} — their current schedule stays while you review`,
+        detailsHtml:
+          cardRow("Student", name) +
+          cardRow("Email", p.studentEmail || "") +
+          cardRow("Plan", p.planLabel || "—") +
+          cardRow("Requested time", dayTime) +
+          cardRow("Type", p.lessonType || "—") +
+          cardRow("Status", "Pending review — current schedule unchanged"),
+        ctaText: "Review request",
         ctaHref: `${APP_URL}/admin/fixed-schedule`,
       };
       }

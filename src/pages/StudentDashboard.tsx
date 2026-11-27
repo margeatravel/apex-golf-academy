@@ -38,6 +38,7 @@ import { RedeemRewardModal } from '@/components/RedeemRewardModal';
 import { InstallAppButton } from '@/components/InstallAppButton';
 import { MyChildrenCard } from '@/components/MyChildrenCard';
 import { PrioritySpotInfoModal } from '@/components/PrioritySpotInfoModal';
+import { MyRecurringSchedulePanel } from '@/components/MyRecurringSchedulePanel';
 import { toast } from 'sonner';
 import { PaymentMethodSelector } from '@/components/PaymentMethodSelector';
 import { getStaffLandingRoute } from '@/lib/staffLanding';
@@ -213,6 +214,7 @@ export default function StudentDashboard() {
   const [buyingLesson, setBuyingLesson] = useState(false);
   const [redeemModalOpen, setRedeemModalOpen] = useState(false);
   const [prioritySpotInfoOpen, setPrioritySpotInfoOpen] = useState(false);
+  const [myScheduleOpen, setMyScheduleOpen] = useState(false);
   const [installModalOpen, setInstallModalOpen] = useState(false);
   const [manualRefreshing, setManualRefreshing] = useState(false);
 
@@ -1047,7 +1049,13 @@ export default function StudentDashboard() {
               }}
               className="px-2 py-3 flex flex-col justify-center text-center"
             >
-              <Link to="/lessons" className="absolute inset-0 rounded-[inherit]" aria-label={t('home.viewPrioritySpotDetails')} />
+              {/* Tap opens "Mi horario recurrente" (view + request a change) instead of /lessons. */}
+              <button
+                type="button"
+                onClick={() => setMyScheduleOpen(true)}
+                className="absolute inset-0 rounded-[inherit] cursor-pointer"
+                aria-label={t('home.viewPrioritySpotDetails')}
+              />
               <div className="relative pointer-events-none min-h-0 max-h-[192px] overflow-y-auto">
               {/* Header: golden label */}
               <div className="flex items-start justify-center gap-1 min-w-0 mb-2">
@@ -1445,6 +1453,14 @@ export default function StudentDashboard() {
       <PrioritySpotInfoModal
         open={prioritySpotInfoOpen}
         onOpenChange={setPrioritySpotInfoOpen}
+      />
+      <MyRecurringSchedulePanel
+        open={myScheduleOpen}
+        onOpenChange={setMyScheduleOpen}
+        profile={profile}
+        effectivePlan={effectivePlan}
+        recurringSlots={recurringSlots.filter((s: any) => s.is_own)}
+        upcomingLessons={upcomingLessons}
       />
 
 
