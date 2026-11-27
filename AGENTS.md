@@ -1,3 +1,14 @@
+## Demo Mode (Margea Golf Academy) — 27 Nov 2026
+- Demo is Santiago-only (gate by his email in DemoModeContext; no switch in MobileMenu, no other entry point — never add one).
+- Architecture is TWO layers, both installed from main.tsx:
+  1. `src/lib/demoClientGuard.ts` patches the shared Supabase client while demo is on: `from()` → DemoQueryBuilder (`src/lib/demoQuery.ts`, a mini-PostgREST over the demo store), `rpc()` → demoRpc, `functions.invoke()` → demoInvokeFunction, `storage` → fake (signed URLs → /placeholder.svg), `channel()` → no-op, `auth.updateUser` → fake success.
+  2. `src/lib/demoFetchGuard.ts` is the network backstop: in demo mode EVERY fetch to `*.supabase.co` is answered locally except auth token refresh, GET /auth/v1/user and logout. This catches raw `fetch()` calls the client guard can't see (create-student, get-available-slots, book-lesson, coach-ai-chat SSE, tus resumable upload). No demo id can ever reach the real backend — interception is by host, not by id pattern.
+- `src/lib/demoStore.ts`: the demo store, seeded from `src/data/demoData.ts` (all fictitious), persisted to sessionStorage after every mutation — demo writes survive refresh within the tab session, never leave the browser. Real user id is mapped to the fictitious demo coach id (`coach-00000000-0000-4000-8000-000000000001`, "Coach Demo"), so the greeting reads "Bienvenido, Coach" in demo.
+- Toggling demo reloads the page (DemoModeContext.setDemoMode) so no stale real data stays in react-query caches or AuthContext.
+- Edge functions in demo return fake success and NEVER send mail / charge Stripe / sync calendars; create-checkout returns `{url: null}` on purpose. `claim-recurring-slot` is intentionally generic fake success only — the recurring-schedule change flow (f8a8d43) is off-limits.
+- Demo banner text: "🎭 MODO DEMO — datos ficticios" (DemoModeBanner, sticky top, App level).
+- Smoke test: `tests/demo-smoke.ts` (`npx tsx tests/demo-smoke.ts`).
+
 # Project Architecture Rules
 - Subscription access checks accept both Stripe active and trialing states and refresh the profile after reconciliation, so promotions retain the purchased tier without changing manual overrides.
 

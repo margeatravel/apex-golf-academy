@@ -10,7 +10,7 @@ export function DemoModeBanner() {
   return (
     <div
       role="status"
-      className="w-full text-center text-sm font-semibold flex items-center justify-center gap-3 px-4 py-2"
+      className="w-full text-center text-sm font-semibold flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-4 py-2"
       style={{
         background: 'linear-gradient(90deg, #f97316 0%, #ea580c 100%)',
         color: '#fff',
@@ -21,7 +21,7 @@ export function DemoModeBanner() {
         paddingTop: `calc(env(safe-area-inset-top, 0px) + 8px)`,
       }}
     >
-      <span>🎭 Modo Demo activo — datos ficticios</span>
+      <span>🎭 MODO DEMO — datos ficticios</span>
       <button
         type="button"
         onClick={() => setDemoMode(false)}

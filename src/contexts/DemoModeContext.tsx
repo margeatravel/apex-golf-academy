@@ -40,11 +40,17 @@ export function DemoModeProvider({ children }: { children: ReactNode }) {
   }, [loading, canUseDemoMode, isDemoMode]);
 
   const setDemoMode = (v: boolean) => {
+    if (v === isDemoMode) return;
     setIsDemoModeState(v);
     try {
       if (v) sessionStorage.setItem(STORAGE_KEY, '1');
       else sessionStorage.removeItem(STORAGE_KEY);
     } catch {}
+    // Reload so every cached query and the AuthContext profile are re-read
+    // through the demo layer (demo coach, demo data) instead of keeping stale
+    // real data in memory. The demo store lives in sessionStorage, so demo
+    // writes made earlier in the session survive the reload.
+    window.location.reload();
   };
 
   const toggleDemoMode = () => setDemoMode(!isDemoMode);

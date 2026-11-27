@@ -807,3 +807,171 @@ export function getDemoStudentPoints(studentId: string): any {
     reward_available: total >= 100,
   };
 }
+
+// ── DEMO COACH IDENTITY ─────────────────────────────────────────────────────
+// The demo coach is a fictitious person ("Coach Demo"). Every demo row that
+// belongs to the coach uses this id. The demo layer maps Santiago's real auth
+// id to this id, so the greeting reads "Bienvenido, Coach" in demo — never
+// "Bienvenido, Santiago" — and no real profile row is ever shown.
+export const demoCoachId = id('coach', 1);
+
+export const demoCoachProfileRow: any = {
+  id: demoCoachId,
+  email: 'coach.demo@margeagolfacademy.com',
+  full_name: 'Coach Demo',
+  phone: '+52 998 123 4567',
+  photo_url: null,
+  handicap: 4,
+  goals: null,
+  created_at: isoMonthsAgo(24),
+  plan_tier: 'apex',
+  manual_plan_override: null,
+  override_expires_at: null,
+  assigned_coach_id: null,
+  trial_ends_at: null,
+  is_coach: true,
+};
+
+// ── NOTIFICATIONS (coach inbox bell + /notifications) ───────────────────────
+export const demoNotifications: any[] = [
+  { id: id('notif', 1), user_id: demoCoachId, type: 'lesson_booked', title: 'Nueva clase reservada', body: 'Ana Rodríguez reservó una clase para mañana a las 08:00.', link_url: '/admin/lessons', metadata: { student_id: demoStudents[1].id }, read_at: null, created_at: isoDaysAgo(0) },
+  { id: id('notif', 2), user_id: demoCoachId, type: 'payment', title: 'Pago recibido', body: 'Jorge Herrera pagó $14,999 MXN por su suscripción Apex.', link_url: '/admin/revenue', metadata: { student_id: demoStudents[2].id }, read_at: null, created_at: isoDaysAgo(1) },
+  { id: id('notif', 3), user_id: demoCoachId, type: 'redemption', title: 'Canje pendiente', body: 'Diego Castillo canjeó un análisis de video (150 puntos).', link_url: '/admin/inbox', metadata: { student_id: demoStudents[7].id }, read_at: null, created_at: isoDaysAgo(2) },
+  { id: id('notif', 4), user_id: demoCoachId, type: 'lesson_booked', title: 'Nueva clase reservada', body: 'Sofía Ramírez reservó una clase para el miércoles a las 10:00.', link_url: '/admin/lessons', metadata: { student_id: demoStudents[6].id }, read_at: isoDaysAgo(1), created_at: isoDaysAgo(3) },
+  { id: id('notif', 5), user_id: demoCoachId, type: 'analysis', title: 'Video para análisis', body: 'Emilio Reyes subió un video para análisis.', link_url: '/admin/analysis', metadata: { student_id: demoStudents[11].id }, read_at: isoDaysAgo(2), created_at: isoDaysAgo(4) },
+  { id: id('notif', 6), user_id: demoCoachId, type: 'subscription', title: 'Nueva suscripción Pro', body: 'Lucía Vargas se suscribió al plan Pro.', link_url: '/admin/subscribers', metadata: { student_id: demoStudents[18].id }, read_at: isoDaysAgo(3), created_at: isoDaysAgo(5) },
+];
+
+export const demoBroadcastNotifications: any[] = [
+  { id: id('bcast', 1), type: 'pro_zone', title: 'Nuevo video en Pro Zone', body: 'Análisis de swing: el drive de los profesionales del tour.', link_url: '/pro-zone', audience: 'pro_zone', created_at: isoDaysAgo(1) },
+  { id: id('bcast', 2), type: 'announcement', title: 'Horarios de diciembre', body: 'Ya están abiertos los horarios de diciembre para reservar.', link_url: '/lessons', audience: 'all', created_at: isoDaysAgo(4) },
+  { id: id('bcast', 3), type: 'pro_zone', title: 'Nueva categoría: Putting', body: 'Explora los nuevos videos de putting en Pro Zone.', link_url: '/pro-zone', audience: 'pro_zone', created_at: isoDaysAgo(8) },
+];
+
+// ── POINTS: rewards + redemptions (Bandeja / CoachInbox) ───────────────────
+export const demoPointRewards: any[] = [
+  { id: id('rew', 1), key: 'video_analysis', name: 'Análisis de video', cost: 150, description: 'Análisis de swing por video con comentarios del coach.' },
+  { id: id('rew', 2), key: 'free_lesson', name: 'Clase gratis', cost: 500, description: 'Una clase individual gratis.' },
+  { id: id('rew', 3), key: 'merch', name: 'Gorra Margea Golf', cost: 300, description: 'Gorra oficial de la academia.' },
+];
+
+export const demoPointRedemptions: any[] = [
+  { id: id('red', 1), user_id: demoStudents[7].id,  reward_id: demoPointRewards[0].id, reward_type: 'video_analysis', cost: 150, fulfillment_status: 'pending',   created_at: isoDaysAgo(1) },
+  { id: id('red', 2), user_id: demoStudents[2].id,  reward_id: demoPointRewards[1].id, reward_type: 'free_lesson',    cost: 500, fulfillment_status: 'fulfilled', created_at: isoDaysAgo(6) },
+  { id: id('red', 3), user_id: demoStudents[6].id,  reward_id: demoPointRewards[0].id, reward_type: 'video_analysis', cost: 150, fulfillment_status: 'pending',   created_at: isoDaysAgo(3) },
+  { id: id('red', 4), user_id: demoStudents[11].id, reward_id: demoPointRewards[2].id, reward_type: 'merch',          cost: 300, fulfillment_status: 'fulfilled', created_at: isoDaysAgo(9) },
+  { id: id('red', 5), user_id: demoStudents[18].id, reward_id: demoPointRewards[0].id, reward_type: 'video_analysis', cost: 150, fulfillment_status: 'cancelled', created_at: isoDaysAgo(12) },
+];
+
+// ── ANALYSIS REQUESTS + VIDEOS ──────────────────────────────────────────────
+export const demoVideos: any[] = [
+  { id: id('vid', 1), student_id: demoStudents[11].id, title: 'Swing driver — vista lateral', description: 'Quiero mejorar el contacto con el driver.', file_url: '/placeholder.svg', file_type: 'video', upload_date: isoDaysAgo(2), tags: ['driver'], category: 'analysis', thumbnail_url: '/placeholder.svg', coach_feedback: null, created_at: isoDaysAgo(2) },
+  { id: id('vid', 2), student_id: demoStudents[6].id,  title: 'Hierro 7 — down the line', description: null, file_url: '/placeholder.svg', file_type: 'video', upload_date: isoDaysAgo(4), tags: ['hierros'], category: 'analysis', thumbnail_url: '/placeholder.svg', coach_feedback: 'Buen plano, trabaja la rotación de cadera.', created_at: isoDaysAgo(4) },
+  { id: id('vid', 3), student_id: demoStudents[7].id,  title: 'Putt 3 metros', description: 'Fallo mucho los putts cortos.', file_url: '/placeholder.svg', file_type: 'video', upload_date: isoDaysAgo(6), tags: ['putting'], category: 'analysis', thumbnail_url: '/placeholder.svg', coach_feedback: null, created_at: isoDaysAgo(6) },
+  { id: id('vid', 4), student_id: demoStudents[1].id,  title: 'Swing completo — práctica', description: null, file_url: '/placeholder.svg', file_type: 'video', upload_date: isoDaysAgo(9), tags: [], category: 'practice', thumbnail_url: '/placeholder.svg', coach_feedback: null, created_at: isoDaysAgo(9) },
+  { id: id('vid', 5), student_id: demoStudents[2].id,  title: 'Chip desde el rough', description: null, file_url: '/placeholder.svg', file_type: 'video', upload_date: isoDaysAgo(12), tags: ['juego corto'], category: 'analysis', thumbnail_url: '/placeholder.svg', coach_feedback: 'Manos adelante al impacto.', created_at: isoDaysAgo(12) },
+  { id: id('vid', 6), student_id: demoStudents[18].id, title: 'Bunker — salida', description: null, file_url: '/placeholder.svg', file_type: 'video', upload_date: isoDaysAgo(15), tags: ['bunker'], category: 'analysis', thumbnail_url: '/placeholder.svg', coach_feedback: null, created_at: isoDaysAgo(15) },
+];
+
+export const demoAnalysisRequests: any[] = [
+  { id: id('anreq', 1), student_id: demoStudents[11].id, video_id: demoVideos[0].id, payment_status: 'paid',    delivery_status: 'pending',   amount: 550, created_at: isoDaysAgo(2),  notes: null },
+  { id: id('anreq', 2), student_id: demoStudents[6].id,  video_id: demoVideos[1].id, payment_status: 'paid',    delivery_status: 'delivered', amount: 550, created_at: isoDaysAgo(4),  notes: null },
+  { id: id('anreq', 3), student_id: demoStudents[7].id,  video_id: demoVideos[2].id, payment_status: 'pending', delivery_status: 'pending',   amount: 550, created_at: isoDaysAgo(6),  notes: null },
+  { id: id('anreq', 4), student_id: demoStudents[2].id,  video_id: demoVideos[4].id, payment_status: 'paid',    delivery_status: 'delivered', amount: 550, created_at: isoDaysAgo(12), notes: null },
+];
+
+// ── AVAILABILITY ────────────────────────────────────────────────────────────
+export const demoAvailabilityRules: any[] = [
+  { id: id('rule', 1), coach_id: demoCoachId, weekday: 1, start_time: '07:00:00', end_time: '13:00:00', notes: 'Mañanas', is_active: true, created_at: isoMonthsAgo(6) },
+  { id: id('rule', 2), coach_id: demoCoachId, weekday: 2, start_time: '07:00:00', end_time: '13:00:00', notes: 'Mañanas', is_active: true, created_at: isoMonthsAgo(6) },
+  { id: id('rule', 3), coach_id: demoCoachId, weekday: 3, start_time: '07:00:00', end_time: '13:00:00', notes: 'Mañanas', is_active: true, created_at: isoMonthsAgo(6) },
+  { id: id('rule', 4), coach_id: demoCoachId, weekday: 4, start_time: '07:00:00', end_time: '13:00:00', notes: 'Mañanas', is_active: true, created_at: isoMonthsAgo(6) },
+  { id: id('rule', 5), coach_id: demoCoachId, weekday: 5, start_time: '07:00:00', end_time: '11:00:00', notes: 'Viernes corto', is_active: true, created_at: isoMonthsAgo(6) },
+  { id: id('rule', 6), coach_id: demoCoachId, weekday: 6, start_time: '07:00:00', end_time: '12:00:00', notes: 'Sábado', is_active: true, created_at: isoMonthsAgo(6) },
+];
+
+export const demoBookingSettingsRow: any = {
+  id: 'default',
+  default_lesson_duration_minutes: 60,
+  buffer_minutes: 0,
+  slot_increment_minutes: 30,
+  min_notice_hours: 12,
+  max_advance_days: 60,
+  allow_unpaid_booking: false,
+};
+
+// ── FAMILY ──────────────────────────────────────────────────────────────────
+// Fictitious families: Carlos Mendoza is the parent of Sofía Ramírez and
+// Diego Castillo; Jorge Herrera is the parent of Valentina Cruz.
+export const demoFamilyLinks: any[] = [
+  { id: id('fam', 1), parent_user_id: demoStudents[0].id,  child_user_id: demoStudents[6].id,  created_at: isoMonthsAgo(8) },
+  { id: id('fam', 2), parent_user_id: demoStudents[0].id,  child_user_id: demoStudents[7].id,  created_at: isoMonthsAgo(8) },
+  { id: id('fam', 3), parent_user_id: demoStudents[2].id,  child_user_id: demoStudents[8].id,  created_at: isoMonthsAgo(5) },
+];
+
+// ── INVITE CODES ────────────────────────────────────────────────────────────
+// DEMO0000 = coach code, DEMO0001 = reusable access link. Both resolve inside
+// demo via the demo layer; they deliberately do NOT exist in the real DB.
+export const demoStudentInvites: any[] = [
+  { id: id('inv', 1), code: 'DEMO0000', inviter_id: demoCoachId, inviter_is_coach: true,  recipient_email: null, recipient_name: null, status: 'pending', accepted_by: null, accepted_at: null, expires_at: isoMonthsAhead(12), created_at: isoMonthsAgo(2), is_reusable: true,  assigned_coach_id: demoCoachId },
+  { id: id('inv', 2), code: 'DEMO0001', inviter_id: demoCoachId, inviter_is_coach: true,  recipient_email: null, recipient_name: null, status: 'pending', accepted_by: null, accepted_at: null, expires_at: isoMonthsAhead(12), created_at: isoMonthsAgo(2), is_reusable: true,  assigned_coach_id: demoCoachId },
+  { id: id('inv', 3), code: 'DEMO7K2P', inviter_id: demoCoachId, inviter_is_coach: true,  recipient_email: 'invitado.demo@example.com', recipient_name: 'Invitado Demo', status: 'pending', accepted_by: null, accepted_at: null, expires_at: isoMonthsAhead(1), created_at: isoDaysAgo(5), is_reusable: false, assigned_coach_id: demoCoachId },
+];
+
+// ── PRO ZONE MEDIA ──────────────────────────────────────────────────────────
+export const demoProZoneMedia: any[] = [
+  { id: id('pz', 1), category: 'drives',       title: 'Drive: secuencia completa', caption: 'El swing de los profesionales del tour, cuadro por cuadro.', file_url: '/placeholder.svg', file_type: 'image', thumbnail_url: '/placeholder.svg', sort_order: 1, is_active: true, pro_name: 'Demo Pro 1' },
+  { id: id('pz', 2), category: 'drives',       title: 'Drive: impacto',            caption: null, file_url: '/placeholder.svg', file_type: 'image', thumbnail_url: '/placeholder.svg', sort_order: 2, is_active: true, pro_name: 'Demo Pro 2' },
+  { id: id('pz', 3), category: 'irons',        title: 'Hierros: control de distancia', caption: null, file_url: '/placeholder.svg', file_type: 'image', thumbnail_url: '/placeholder.svg', sort_order: 1, is_active: true, pro_name: null },
+  { id: id('pz', 4), category: 'short_game',   title: 'Chip: técnica básica',      caption: null, file_url: '/placeholder.svg', file_type: 'image', thumbnail_url: '/placeholder.svg', sort_order: 1, is_active: true, pro_name: null },
+  { id: id('pz', 5), category: 'putting',      title: 'Putting: lectura de green', caption: null, file_url: '/placeholder.svg', file_type: 'image', thumbnail_url: '/placeholder.svg', sort_order: 1, is_active: true, pro_name: null },
+  { id: id('pz', 6), category: 'tour_pros',    title: 'Tour Pro: rutina pre-tiro', caption: null, file_url: '/placeholder.svg', file_type: 'image', thumbnail_url: '/placeholder.svg', sort_order: 1, is_active: true, pro_name: 'Demo Pro 3' },
+];
+
+// ── ROUNDS / HANDICAP (student Scores + admin rounds) ───────────────────────
+export const demoGolfRounds: any[] = [
+  { id: id('rnd', 1), student_id: demoStudents[0].id,  played_on: isoDaysAgo(3),  course_name: 'Puerto Cancún Golf', score: 82, par: 72, holes: 18, created_at: isoDaysAgo(3) },
+  { id: id('rnd', 2), student_id: demoStudents[0].id,  played_on: isoDaysAgo(10), course_name: 'El Camaleón Mayakoba', score: 85, par: 72, holes: 18, created_at: isoDaysAgo(10) },
+  { id: id('rnd', 3), student_id: demoStudents[2].id,  played_on: isoDaysAgo(5),  course_name: 'Puerto Cancún Golf', score: 78, par: 72, holes: 18, created_at: isoDaysAgo(5) },
+  { id: id('rnd', 4), student_id: demoStudents[6].id,  played_on: isoDaysAgo(7),  course_name: 'Iberostar Playa Paraíso', score: 90, par: 72, holes: 18, created_at: isoDaysAgo(7) },
+  { id: id('rnd', 5), student_id: demoStudents[7].id,  played_on: isoDaysAgo(2),  course_name: 'Puerto Cancún Golf', score: 88, par: 72, holes: 18, created_at: isoDaysAgo(2) },
+  { id: id('rnd', 6), student_id: demoStudents[1].id,  played_on: isoDaysAgo(14), course_name: 'El Camaleón Mayakoba', score: 94, par: 72, holes: 18, created_at: isoDaysAgo(14) },
+];
+
+export const demoHandicapHistory: any[] = demoStudents.slice(0, 8).map((s, i) => ({
+  id: id('hcp', i + 1),
+  student_id: s.id,
+  handicap: s.handicap,
+  recorded_at: isoDaysAgo(3 + i),
+  created_at: isoDaysAgo(3 + i),
+}));
+
+export const demoGolfCourses: any[] = [
+  { id: id('crs', 1), name: 'Puerto Cancún Golf', location: 'Cancún, QR', par: 72, created_at: isoMonthsAgo(10) },
+  { id: id('crs', 2), name: 'El Camaleón Mayakoba', location: 'Playa del Carmen, QR', par: 72, created_at: isoMonthsAgo(10) },
+  { id: id('crs', 3), name: 'Iberostar Playa Paraíso', location: 'Playa del Carmen, QR', par: 72, created_at: isoMonthsAgo(10) },
+];
+
+// ── STAFF (manage-staff demo list — fictitious teammates) ───────────────────
+export const demoStaffMembers: any[] = [
+  { user_id: id('stf', 1), full_name: 'Paola Herrera', email: 'paola.herrera@demo.margeagolfacademy.com', scopes: ['pro_zone', 'students'] },
+  { user_id: id('stf', 2), full_name: 'Luis Gómez',    email: 'luis.gomez@demo.margeagolfacademy.com',    scopes: ['pro_zone'] },
+];
+
+// ── ACADEMY SETTINGS (key/value rows read by AdminSettings) ─────────────────
+export const demoAcademySettings: any[] = [
+  { id: id('set', 1), key: 'free_trial_days', value: 30, created_at: isoMonthsAgo(6) },
+  { id: id('set', 2), key: 'gamification', value: { points_per_lesson: 10, enabled: true }, created_at: isoMonthsAgo(6) },
+  { id: id('set', 3), key: 'google_calendar_sync', value: { enabled: false }, created_at: isoMonthsAgo(6) },
+];
+
+// ── MISC EMPTY-SEEDED COLLECTIONS (shape only; UI handles empty) ───────────
+export const demoStudentMedia: any[] = [
+  { id: id('sm', 1), student_id: demoStudents[0].id, title: 'Swing — antes y después', file_url: '/placeholder.svg', file_type: 'image', created_at: isoDaysAgo(6) },
+  { id: id('sm', 2), student_id: demoStudents[6].id, title: 'Progreso putting', file_url: '/placeholder.svg', file_type: 'image', created_at: isoDaysAgo(11) },
+];
+
+export const demoSwingAnalyses: any[] = [
+  { id: id('swa', 1), student_id: demoStudents[11].id, video_id: demoVideos[0].id, status: 'completed', summary: 'Demo: buen plano, trabajar rotación de cadera.', created_at: isoDaysAgo(2) },
+  { id: id('swa', 2), student_id: demoStudents[6].id, video_id: demoVideos[1].id, status: 'completed', summary: 'Demo: impacto consistente.', created_at: isoDaysAgo(4) },
+];
