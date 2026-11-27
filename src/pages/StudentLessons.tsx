@@ -5,28 +5,24 @@ import { useStudentPreview } from '@/contexts/StudentPreviewContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Clock, FileText, ChevronDown, ChevronUp, Package, CheckCircle2, Play, Sparkles, ArrowRight, CalendarCheck, Lock, X, RefreshCw, CalendarPlus, ArrowRightLeft, Repeat } from 'lucide-react';
+import { Calendar, Clock, FileText, ChevronDown, ChevronUp, Package, CheckCircle2, Play, Sparkles, ArrowRight, CalendarCheck, Lock, X, RefreshCw, CalendarPlus, ArrowRightLeft } from 'lucide-react';
 import { InternalHeader } from '@/components/InternalHeader';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useVisibleRecurringSlots } from '@/hooks/useVisibleRecurringSlots';
-import { StudentStartsOnBadge } from '@/components/student/StudentStartsOnBadge';
 import { useSharedPackageMemberNames } from '@/hooks/useSharedPackages';
 import { InternalBookingModal } from '@/components/InternalBookingModal';
 import { SocialFooter } from '@/components/SocialFooter';
 import { LinkCoachCard } from '@/components/LinkCoachCard';
 import { RequireCoachModal } from '@/components/RequireCoachModal';
-import { formatLessonDate, formatLessonTime, getLessonSortKey, getTodayInAppTimezone } from '@/lib/formatLessonDateTime';
+import { formatLessonDate, formatLessonTime, getLessonCalendarParts, getLessonSortKey, getTodayInAppTimezone } from '@/lib/formatLessonDateTime';
 import { fmtMXN } from '@/lib/formatCurrency';
 import { buildWeightedLessonNumberMap, computePackageCounts, getWeightedLessonCount } from '@/lib/lessonPackageUsage';
 import { isEffectivelyTaken } from '@/lib/lessonStatus';
 import { PackageGroupDivider } from '@/components/lessons/PackageGroupDivider';
 import { translateLessonType } from '@/lib/lessonTypeLabel';
 import { VideoDetailModal } from '@/components/VideoDetailModal';
-import { CreateReportModal } from '@/components/CreateReportModal';
-import { StudentReportsPanel } from '@/components/StudentReportsPanel';
 import { useSignedMediaUrl as useSignedLessonVideoUrl } from '@/hooks/useSignedMediaUrl';
 import { openGoogleCalendar } from '@/lib/addToGoogleCalendar';
 import {
@@ -111,7 +107,6 @@ function LessonVideoThumb({ v, onOpen }: { v: any; onOpen: () => void }) {
 
 export default function StudentLessons() {
   const { user, profile, hasLinkedCoach, effectivePlan } = useAuth();
-  const [reportOpen, setReportOpen] = useState(false);
   const { blockWrite } = useStudentPreview();
   const { t, language } = useLanguage();
   const locale = language === 'es' ? 'es-MX' : 'en-US';
@@ -169,10 +164,6 @@ export default function StudentLessons() {
     },
     enabled: !!profile?.id,
   });
-
-  // Recurring ("Priority Spot") slots of the logged-in student — powers the
-  // Schedule tab, which only renders when there is at least one active slot.
-  const recurringSlots = useVisibleRecurringSlots(profile?.id);
 
   const { data: allLessons = [] } = useQuery({
     queryKey: ['all-lessons', profile?.id, sharedPackageIds.join(',')],
@@ -362,6 +353,15 @@ export default function StudentLessons() {
   }, [lessons]);
 
   const upcomingGroups = useMemo(() => groupByMonth(upcomingLessons, locale), [upcomingLessons, locale]);
+  // Hero: the next lesson gets the featured gold card above the list, so it
+  // is excluded from the grouped list below (no duplicate card).
+  const nextLesson = upcomingLessons[0] ?? null;
+  const restUpcomingGroups = useMemo(() => {
+    if (!nextLesson) return upcomingGroups;
+    return upcomingGroups
+      .map((g) => ({ ...g, lessons: g.lessons.filter((l: any) => l.id !== nextLesson.id) }))
+      .filter((g) => g.lessons.length > 0);
+  }, [upcomingGroups, nextLesson]);
   const pastGroups = useMemo(() => groupByMonth(pastLessons, locale), [pastLessons, locale]);
 
   // Group lessons by package_id for quick lookup
@@ -391,7 +391,7 @@ export default function StudentLessons() {
     return map;
   }, [videos]);
 
-  const LessonCard = ({ lesson, isLast, cancellable = false, onReschedule }: { lesson: any; isLast: boolean; cancellable?: boolean; onReschedule?: () => void }) => {
+  const LessonCard = ({ lesson, cancellable = false, onReschedule, featured = false }: { lesson: any; cancellable?: boolean; onReschedule?: () => void; featured?: boolean }) => {
     const [notesOpen, setNotesOpen] = useState(false);
     const [cancelOpen, setCancelOpen] = useState(false);
     const [tooSoonOpen, setTooSoonOpen] = useState(false);
@@ -405,10 +405,15 @@ export default function StudentLessons() {
     const hasCoachNotes = !!lesson.coach_notes;
     const hasStudentNotes = !!lesson.student_notes;
     const isCompleted = lesson.status === 'completed';
-    const lessonNum = lessonNumberMap.get(lesson.id);
     const lessonVideos = videosByLesson.get(lesson.id) || [];
-
-    const dotColor = isCompleted ? '#4a7c59' : '#E8D5B0';
+    // Big date block (day / month / weekday) for the clean card layout.
+    const calParts = getLessonCalendarParts(lesson);
+    const weekdayShort = (() => {
+      const d = lesson.lesson_start_at
+        ? new Date(lesson.lesson_start_at)
+        : new Date(`${lesson.lesson_date}T12:00:00-05:00`);
+      return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'America/Cancun' }).format(d);
+    })();
 
     // 24-hour cancellation policy. Lesson date/time are in Cancun (UTC-5).
     const lessonStartMs = (() => {
@@ -492,72 +497,70 @@ export default function StudentLessons() {
     };
 
     return (
-      <div className="flex gap-0 relative">
-        {/* Timeline column */}
-        <div className="flex flex-col items-center w-5 shrink-0 relative">
-          {/* Dot */}
-          <div
-            className="rounded-full shrink-0 mt-4 z-10"
-            style={{ width: 8, height: 8, backgroundColor: dotColor }}
-          />
-          {/* Vertical line */}
-          {!isLast && (
-            <div className="flex-1 w-px" style={{ backgroundColor: 'rgba(255,255,255,0.2)' }} />
+      <>
+      <div
+        className="glass-card overflow-hidden relative mb-2"
+        style={featured ? {
+          borderColor: 'rgba(240,192,64,0.35)',
+          boxShadow: '0 0 0 1px rgba(240,192,64,0.08) inset, 0 8px 28px -14px rgba(240,192,64,0.20)',
+          background: 'linear-gradient(160deg, rgba(240,192,64,0.06), rgba(255,255,255,0.04))',
+        } : undefined}
+      >
+        <div className="p-4 relative">
+          {featured && (
+            <div className="flex items-center gap-2 mb-3">
+              <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#F0C040' }} />
+              <span className="text-gold-accent text-[11px] uppercase tracking-[0.14em] font-semibold">
+                {t('ui.studentLessons.nextLesson')}
+              </span>
+            </div>
           )}
-        </div>
-
-        {/* Card body */}
-        <div className="glass-card overflow-hidden relative flex-1 mb-2 ml-2">
-          <div className="p-3 relative">
-            {/* Top row: date + time + lesson# + status badge — all on one line */}
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 flex-1 flex items-center gap-2 flex-wrap">
-                <span className="font-heading font-semibold text-ivory text-sm">{formatLessonDate(lesson, 'full', locale)}</span>
-                <span className="text-ivory/60 text-xs flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {formatLessonTime(lesson)} • {lesson.duration_minutes}m
+          <div className="flex gap-4">
+            {/* Date block */}
+            <div className="text-center shrink-0 w-11">
+              <div className="font-heading font-bold text-ivory leading-none" style={{ fontSize: featured ? 34 : 26 }}>{calParts.day}</div>
+              <div className="text-gold-accent font-semibold uppercase" style={{ fontSize: 11, marginTop: 3 }}>{calParts.month}</div>
+              <div className="text-ivory/45 capitalize" style={{ fontSize: 10 }}>{weekdayShort}</div>
+            </div>
+            <div className="flex-1 min-w-0 border-l border-white/10 pl-4">
+              {/* Title + status */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-heading font-semibold text-ivory" style={{ fontSize: featured ? 17 : 15 }}>
+                  {translateLessonType(lesson.lesson_type, language)}
                 </span>
-                {lessonNum && (
-                  <span style={{ color: '#E8D5B0', opacity: 0.55, fontSize: 10 }}>
-                    #{lessonNum}
-                  </span>
-                )}
-                {isSharedPackageLesson && (
-                  <span
-                    className="text-[10px] px-2 py-0.5 rounded-full"
-                    style={{
-                      background: 'rgba(240,192,64,0.14)',
-                      border: '1px solid rgba(240,192,64,0.35)',
-                      color: '#F0C040',
-                    }}
+                {lesson.skipped ? (
+                  <Badge className="text-[10px] shrink-0 bg-amber-500/20 text-amber-300 border-amber-400/30">
+                    {t('ui.studentLessons.skipped')}
+                  </Badge>
+                ) : (
+                  <Badge
+                    className={`text-[10px] shrink-0 ${
+                      isCompleted ? 'bg-green-accent/20 text-green-accent border-green-accent/30' :
+                      lesson.status === 'scheduled' ? 'bg-status-scheduled/20 text-status-scheduled border-status-scheduled/30' :
+                      'bg-destructive/20 text-destructive border-destructive/30'
+                    }`}
                   >
-                    {t('ui.studentLessons.sharedPackageTag')}
-                  </span>
+                    {statusLabel(lesson.status)}
+                  </Badge>
                 )}
               </div>
-              {lesson.skipped ? (
-                <Badge className="text-[10px] shrink-0 bg-amber-500/20 text-amber-300 border-amber-400/30">
-                  {t('ui.studentLessons.skipped')}
-                </Badge>
-              ) : (
-                <Badge
-                  className={`text-[10px] shrink-0 ${
-                    isCompleted ? 'bg-green-accent/20 text-green-accent border-green-accent/30' :
-                    lesson.status === 'scheduled' ? 'bg-status-scheduled/20 text-status-scheduled border-status-scheduled/30' :
-                    'bg-destructive/20 text-destructive border-destructive/30'
-                  }`}
+              {/* One meta line: time · duration */}
+              <div className="text-ivory/60 text-xs flex items-center gap-1 mt-1">
+                <Clock className="h-3 w-3" />
+                {formatLessonTime(lesson)} • {lesson.duration_minutes}m
+              </div>
+              {isSharedPackageLesson && (
+                <span
+                  className="text-[10px] px-2 py-0.5 rounded-full mt-1.5 inline-block"
+                  style={{
+                    background: 'rgba(240,192,64,0.14)',
+                    border: '1px solid rgba(240,192,64,0.35)',
+                    color: '#F0C040',
+                  }}
                 >
-                  {statusLabel(lesson.status)}
-                </Badge>
+                  {t('ui.studentLessons.sharedPackageTag')}
+                </span>
               )}
-            </div>
-
-            {/* Type pill */}
-            <div className="mt-1.5">
-              <Badge className="bg-green-accent/20 text-green-accent border-green-accent/30 text-[10px]">
-                {translateLessonType(lesson.lesson_type, language)}
-              </Badge>
-            </div>
 
             {/* Coach videos for this lesson */}
             {lessonVideos.length > 0 && (
@@ -643,11 +646,14 @@ export default function StudentLessons() {
                     <button
                       type="button"
                       onClick={onRescheduleClick}
-                      className={`inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
-                        tooSoonToCancel
-                          ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
-                          : 'text-ivory/70 hover:text-ivory'
-                      }`}
+                      className={featured
+                        ? `h-9 px-4 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold text-[#0d1f18] transition-transform active:scale-95 ${tooSoonToCancel ? 'opacity-50' : ''}`
+                        : `inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
+                          tooSoonToCancel
+                            ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
+                            : 'text-ivory/70 hover:text-ivory'
+                        }`}
+                      style={featured ? { background: '#F0C040' } : undefined}
                     >
                       <ArrowRightLeft className="h-3 w-3" />
                       {t('ui.studentLessons.change')}
@@ -656,11 +662,13 @@ export default function StudentLessons() {
                       type="button"
                       onClick={onCancelClick}
                       title={tooSoonToCancel ? 'Cancellations must be made at least 24 hours in advance' : undefined}
-                      className={`inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
-                        tooSoonToCancel
-                          ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
-                          : 'text-destructive/90 hover:text-destructive'
-                      }`}
+                      className={featured
+                        ? `h-9 px-4 rounded-full inline-flex items-center gap-1.5 text-xs font-semibold text-ivory transition-transform active:scale-95 border border-white/25 ${tooSoonToCancel ? 'opacity-50' : ''}`
+                        : `inline-flex items-center gap-1 text-[11px] font-medium transition-colors ${
+                          tooSoonToCancel
+                            ? 'text-ivory/30 hover:text-ivory/40 cursor-help'
+                            : 'text-destructive/90 hover:text-destructive'
+                        }`}
                     >
                       <X className="h-3 w-3" />
                       {t('ui.studentLessons.cancel')}
@@ -669,8 +677,10 @@ export default function StudentLessons() {
                 </div>
               </div>
             )}
+            </div>
           </div>
         </div>
+      </div>
 
         {canCancel && (
           <AlertDialog open={cancelOpen} onOpenChange={setCancelOpen}>
@@ -763,12 +773,12 @@ export default function StudentLessons() {
             </AlertDialogContent>
           </AlertDialog>
         )}
-      </div>
+      </>
     );
   };
 
   const MonthHeader = ({ label }: { label: string }) => (
-    <div className="flex items-center gap-3 mb-2 mt-4 first:mt-0 pl-8">
+    <div className="flex items-center gap-3 mb-2 mt-4 first:mt-0">
       <span style={{ color: '#E8D5B0', opacity: 0.5, fontSize: 12 }} className="uppercase tracking-widest font-semibold whitespace-nowrap">
         {label}
       </span>
@@ -777,21 +787,14 @@ export default function StudentLessons() {
   );
 
   const TimelineLessonList = ({ groups, cancellable = false, onReschedule }: { groups: { label: string; lessons: any[] }[]; cancellable?: boolean; onReschedule?: () => void }) => {
-    // Flatten to know total count for isLast
-    const allLessons = groups.flatMap(g => g.lessons);
-    let runningIndex = 0;
-
     return (
       <>
         {groups.map((group) => (
           <div key={group.label}>
             <MonthHeader label={group.label} />
-            {group.lessons.map((lesson) => {
-              const idx = runningIndex++;
-              return (
-                <LessonCard key={lesson.id} lesson={lesson} isLast={idx === allLessons.length - 1} cancellable={cancellable} onReschedule={onReschedule} />
-              );
-            })}
+            {group.lessons.map((lesson) => (
+              <LessonCard key={lesson.id} lesson={lesson} cancellable={cancellable} onReschedule={onReschedule} />
+            ))}
           </div>
         ))}
       </>
@@ -983,27 +986,19 @@ export default function StudentLessons() {
 
       {/* Extra bottom padding so the floating "+" button never covers a card. */}
       <main className="container mx-auto px-4 py-6 pb-32 lg:pb-12">
-        <Tabs defaultValue="past" className="space-y-6">
+        <Tabs defaultValue="upcoming" className="space-y-6">
           <TabsList
-            className="flex w-full items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:grid sm:grid-cols-5 mb-4"
+            className="flex w-full items-center gap-1 sm:grid sm:grid-cols-3 mb-4"
           >
-            <TabsTrigger value="past" className="glass-pill-tab flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-3">
-              {t('ui.studentLessons.tabTaken')} ({pastCompletedLessons.length})
-            </TabsTrigger>
-            <TabsTrigger value="packages" className="glass-pill-tab flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-3">
-              {t('ui.studentLessons.tabPackages')} ({packages.length})
-            </TabsTrigger>
-            <TabsTrigger value="upcoming" className="glass-pill-tab flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-3">
+            <TabsTrigger value="upcoming" className="glass-pill-tab flex-1 whitespace-nowrap text-xs sm:text-sm px-3">
               {t('ui.studentLessons.tabScheduled')} ({upcomingLessons.length})
             </TabsTrigger>
-            <TabsTrigger value="reports" className="glass-pill-tab flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-3">
-              {t('ui.studentLessons.tabReports')}
+            <TabsTrigger value="past" className="glass-pill-tab flex-1 whitespace-nowrap text-xs sm:text-sm px-3">
+              {t('ui.studentLessons.tabTaken')} ({pastCompletedLessons.length})
             </TabsTrigger>
-            {recurringSlots.length > 0 && (
-              <TabsTrigger value="schedule" className="glass-pill-tab flex-shrink-0 whitespace-nowrap text-xs sm:text-sm px-3">
-                {t('ui.studentLessons.tabSchedule')}
-              </TabsTrigger>
-            )}
+            <TabsTrigger value="packages" className="glass-pill-tab flex-1 whitespace-nowrap text-xs sm:text-sm px-3">
+              {t('ui.studentLessons.tabPackages')} ({packages.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="animate-fade-in space-y-6">
@@ -1011,9 +1006,13 @@ export default function StudentLessons() {
               <LinkCoachCard variant="banner" />
             )}
 
-            {upcomingLessons.length > 0 ? (
-              <TimelineLessonList groups={upcomingGroups} cancellable onReschedule={() => setRescheduleBookOpen(true)} />
-            ) : (
+            {nextLesson && (
+              <LessonCard lesson={nextLesson} featured cancellable onReschedule={() => setRescheduleBookOpen(true)} />
+            )}
+
+            {restUpcomingGroups.length > 0 ? (
+              <TimelineLessonList groups={restUpcomingGroups} cancellable onReschedule={() => setRescheduleBookOpen(true)} />
+            ) : upcomingLessons.length === 0 ? (
               <div className="glass-card p-8 text-center">
                 <div className="h-16 w-16 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-5">
                   <Calendar className="h-8 w-8 text-ivory/40" />
@@ -1021,85 +1020,11 @@ export default function StudentLessons() {
                 <p className="text-ivory/70 font-medium text-lg mb-2">{t('ui.studentLessons.noUpcoming')}</p>
                 <p className="text-sm text-ivory/40">{t('ui.studentLessons.noUpcomingSub')}</p>
               </div>
-            )}
+            ) : null}
 
             {/* Booking CTAs live at the END of the Scheduled tab. */}
             <UpcomingBookingSection email={profile?.email} />
           </TabsContent>
-
-          {recurringSlots.length > 0 && (
-            <TabsContent value="schedule" className="animate-fade-in">
-              <div
-                className="glass-card p-5 space-y-4"
-                style={{
-                  borderColor: 'rgba(240,192,64,0.35)',
-                  boxShadow: '0 0 0 1px rgba(240,192,64,0.08) inset, 0 8px 28px -14px rgba(240,192,64,0.20)',
-                  background: 'linear-gradient(160deg, rgba(240,192,64,0.06), rgba(255,255,255,0.04))',
-                }}
-              >
-                {/* Golden priority spot header */}
-                <div className="flex items-center gap-2 pb-3 border-b border-gold-accent/20">
-                  <Repeat className="h-4 w-4 text-gold-accent flex-shrink-0" />
-                  <p className="text-gold-accent text-xs uppercase tracking-[0.14em] font-semibold">
-                    {t('ui.studentLessons.prioritySpot')}
-                  </p>
-                </div>
-
-                {(recurringSlots as any[]).map((slot, i) => (
-                  <div
-                    key={slot.id}
-                    className={i > 0 ? 'pt-4 border-t border-white/10' : ''}
-                  >
-                    <p className="text-ivory font-semibold capitalize">
-                      {new Intl.DateTimeFormat(locale, { weekday: 'long' })
-                        .format(new Date(2024, 0, 7 + Number(slot.weekday ?? 0), 12))}
-                    </p>
-                    <p className="text-ivory/60 text-sm mt-0.5">
-                      {formatLessonTime({ lesson_time: slot.start_time })}
-                      {slot.duration_minutes ? ` · ${slot.duration_minutes} min` : ''}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span
-                        className="px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wider"
-                        style={{ background: 'rgba(74,124,89,0.18)', color: '#7BC894' }}
-                      >
-                        {t('ui.studentLessons.confirmed')}
-                      </span>
-                      <span className="text-ivory/45 text-[11px]">{t('ui.studentLessons.weekly')}</span>
-                      <StudentStartsOnBadge startsOn={slot.starts_on} />
-                      {!slot.is_own && (
-                        <span
-                          className="px-2 py-0.5 rounded-full text-[10px]"
-                          style={{ background: 'rgba(240,192,64,0.14)', color: '#F0C040' }}
-                        >
-                          {t('ui.studentLessons.sharedPackageTag')}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-
-                {/* Membership benefit note for the logged-in student's plan. */}
-                <div className="pt-4 border-t border-white/10">
-                  {['scratch', 'pro', 'apex'].includes(String(effectivePlan)) ? (
-                    <p className="text-[11px] text-ivory/60">
-                      {t('ui.studentLessons.benefitMembership').replace(
-                        '{plan}',
-                        effectivePlan === 'apex' ? 'Apex Level' : effectivePlan === 'pro' ? 'Pro' : 'Scratch',
-                      )}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-ivory/60">
-                      {t('ui.studentLessons.benefitCourtesy')}{' '}
-                      <Link to="/plans" className="text-gold-accent underline underline-offset-2">
-                        {t('ui.studentLessons.seePlans')}
-                      </Link>
-                    </p>
-                  )}
-                </div>
-              </div>
-            </TabsContent>
-          )}
 
           <TabsContent value="past" className="animate-fade-in">
             {pastCompletedLessons.length > 0 ? (
@@ -1140,7 +1065,7 @@ export default function StudentLessons() {
                     lastIsActive = isActive;
                   }
                   out.push(
-                    <LessonCard key={lesson.id} lesson={lesson} isLast={idx === totalCount - 1} />
+                    <LessonCard key={lesson.id} lesson={lesson} />
                   );
                   const isLast = idx === totalCount - 1;
                   const nextKey = !isLast ? (pastCompletedLessons[idx + 1].package_id || '__none__') : null;
@@ -1195,36 +1120,9 @@ export default function StudentLessons() {
             )}
           </TabsContent>
 
-          <TabsContent value="reports" className="animate-fade-in">
-            <div className="flex justify-center mb-4">
-              <button
-                type="button"
-                onClick={() => setReportOpen(true)}
-                className="h-10 px-4 rounded-full flex items-center gap-2 text-xs font-medium text-ivory transition-transform active:scale-95"
-                style={{ background: 'rgba(240,192,64,0.14)', border: '1px solid rgba(240,192,64,0.45)' }}
-              >
-                <FileText className="h-4 w-4 text-gold-accent" />
-                {t('ui.studentLessons.generateReport')}
-              </button>
-            </div>
-            <StudentReportsPanel />
-          </TabsContent>
         </Tabs>
       </main>
 
-      {user && (
-        <CreateReportModal
-          open={reportOpen}
-          onOpenChange={setReportOpen}
-          studentId={user.id}
-          studentName={profile?.full_name || user.email || 'Student'}
-          mode="student"
-          onReportGenerated={() => {}}
-          onScoringSaved={() => queryClient.invalidateQueries({ queryKey: ['my-visible-reports', user.id] })}
-        />
-      )}
-
-      <SocialFooter />
 
       <VideoDetailModal
         videoId={openVideoId}
