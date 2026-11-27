@@ -13,6 +13,7 @@ import { SearchableStudentSelect } from '@/components/SearchableStudentSelect';
 import { HourPicker } from '@/components/HourPicker';
 import { StartsOnField, startsOnShortLabel } from '@/components/recurring/StartsOnField';
 import { getCancunToday } from '@/lib/cancunDate';
+import { fetchPackageMemberOptions, firstNameOf, type PackageMemberOption } from '@/lib/sharedPackageMembers';
 import { findRecurringSpotConflicts, formatShortDate, addDaysISO, type FutureSpotConflict } from '@/lib/pendingRecurringMove';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -52,6 +53,9 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
   const [fetchedPackages, setFetchedPackages] = useState<LinkablePackage[]>([]);
   const [loadingPackages, setLoadingPackages] = useState(false);
   const [noPackageOverride, setNoPackageOverride] = useState(false);
+  // Joint spots: who takes this schedule? Null = default (just the student).
+  const [attendeeIds, setAttendeeIds] = useState<string[] | null>(null);
+  const [attendeeOptions, setAttendeeOptions] = useState<PackageMemberOption[]>([]);
   // Same "Starting from" behaviour as the open-spot flow: today = as before,
   // a future date means lessons only start from that date.
   const [startsOn, setStartsOn] = useState(getCancunToday());
@@ -68,8 +72,25 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
       setPackageId('');
       setNoPackageOverride(false);
       setStartsOn(getCancunToday());
+      setAttendeeIds(null);
+      setAttendeeOptions([]);
     }
   }, [open, studentId]);
+
+  // Members of the chosen package for the "¿Quién toma este horario?"
+  // picker — only shown when the package is shared by several students.
+  useEffect(() => {
+    if (!packageId || noPackageOverride) {
+      setAttendeeOptions([]);
+      setAttendeeIds(null);
+      return;
+    }
+    let cancelled = false;
+    fetchPackageMemberOptions(packageId).then((opts) => {
+      if (!cancelled) setAttendeeOptions(opts);
+    });
+    return () => { cancelled = true; };
+  }, [packageId, noPackageOverride]);
 
   const effectiveStudentId = studentId || pickedStudentId;
 
@@ -176,6 +197,12 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
         }
       }
 
+      // Predetermined attendees for the spot: null = just the slot's student.
+      const slotAttendeeIds =
+        attendeeIds && !(attendeeIds.length === 1 && attendeeIds[0] === effectiveStudentId)
+          ? attendeeIds
+          : null;
+
       const rows = selectedDays.map((weekday) => ({
         student_id: effectiveStudentId,
         weekday,
@@ -183,6 +210,7 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
         duration_minutes: parseInt(duration, 10),
         lesson_type: lessonType,
         package_id: noPackageOverride ? null : packageId,
+        attendee_ids: slotAttendeeIds,
         is_active: true,
         coach_id: user.id,
         starts_on: future ? startsOn : null,
@@ -213,6 +241,14 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
           .maybeSingle();
         const studentName = prof?.full_name || prof?.email || 'Unknown student';
         const studentEmail = prof?.email || undefined;
+        // Joint spot: name every attendee in the admin email.
+        const emailStudentName =
+          attendeeIds && attendeeIds.length > 1
+            ? attendeeIds
+              .map((id) => firstNameOf(attendeeOptions.find((o) => o.id === id)?.fullName ?? ''))
+              .filter(Boolean)
+              .join(' y ') || studentName
+            : studentName;
 
         // One notification per selected weekday, since each is a distinct schedule.
         const totalSlots = selectedDays.length;
@@ -227,7 +263,7 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
             return supabase.functions.invoke('notify-admin', {
               body: {
                 eventType: 'recurring_schedule_created',
-                studentName,
+                studentName: emailStudentName,
                 studentEmail,
                 dayOfWeek: dayLabel,
                 spotTime: startTime.length === 5 ? `${startTime}:00` : startTime,
@@ -376,6 +412,34 @@ export function AddRecurringSlotModal({ open, onOpenChange, studentId, packages 
               <p className="text-[11px] text-red-400">
                 This student has no package with lessons remaining. Add one in their profile before creating a recurring spot.
               </p>
+            )}
+
+            {attendeeOptions.length > 1 && (
+              <div className="space-y-2 pt-1">
+                <Label className="text-xs">¿Quién toma este horario?</Label>
+                <div className="space-y-1.5">
+                  {attendeeOptions.map((m) => {
+                    const isOwner = m.id === effectiveStudentId;
+                    const selected = (attendeeIds ?? [effectiveStudentId]).includes(m.id);
+                    return (
+                      <label key={m.id} className="flex items-center gap-2 text-sm text-ivory/85 cursor-pointer">
+                        <Checkbox
+                          checked={selected}
+                          disabled={isOwner}
+                          onCheckedChange={(v) => {
+                            const next = new Set(attendeeIds ?? [effectiveStudentId]);
+                            if (v === true) next.add(m.id);
+                            else next.delete(m.id);
+                            setAttendeeIds(Array.from(next));
+                          }}
+                        />
+                        <span>{firstNameOf(m.fullName)}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-ivory/40">Si van juntos, la hora cuesta 1 crédito del paquete.</p>
+              </div>
             )}
 
             <label className="flex items-start gap-2 text-xs text-ivory/80 cursor-pointer pt-1">

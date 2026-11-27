@@ -208,6 +208,38 @@ export default function StudentLessons() {
     return map;
   }, [memberNames]);
 
+  // Attendees per lesson (joint shared-package lessons have several).
+  // Falls back to the lesson's own student when the table has no rows yet
+  // (e.g. demo mode, where the table does not exist in the demo store).
+  const lessonIdsKey = (allLessons as any[]).map((l) => l.id).sort().join(',');
+  const { data: lessonAttendees = [] } = useQuery({
+    queryKey: ['lesson-attendees', lessonIdsKey],
+    enabled: (allLessons as any[]).length > 0,
+    queryFn: async () => {
+      try {
+        const ids = (allLessons as any[]).map((l) => l.id);
+        const { data, error } = await supabase
+          .from('lesson_attendees')
+          .select('lesson_id, student_id')
+          .in('lesson_id', ids)
+          .order('created_at', { ascending: true });
+        if (error) return [];
+        return data ?? [];
+      } catch {
+        return [];
+      }
+    },
+  });
+  const attendeesByLesson = useMemo(() => {
+    const map = new Map<string, string[]>();
+    (lessonAttendees as any[]).forEach((r) => {
+      const list = map.get(r.lesson_id) ?? [];
+      list.push(r.student_id);
+      map.set(r.lesson_id, list);
+    });
+    return map;
+  }, [lessonAttendees]);
+
   const { data: videos = [] } = useQuery({
     queryKey: ['student-lesson-videos', profile?.id],
     queryFn: async () => {
@@ -415,12 +447,20 @@ export default function StudentLessons() {
       return new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'America/Cancun' }).format(d);
     })();
     // Shared packages: say WHO this lesson is for — "Tú" for your own, first
-    // name for the other member. A lesson row has exactly one student_id.
-    const attendeeLabel = !isSharedPackageLesson
-      ? null
-      : lesson.student_id === profile?.id
-        ? t('ui.studentLessons.you')
-        : (memberNameById.get(lesson.student_id) || '').trim().split(/\s+/)[0] || null;
+    // name for the other member(s). Joint lessons list everyone: "Tú y Luis".
+    const attendeeLabel = (() => {
+      if (!isSharedPackageLesson) return null;
+      const ids = attendeesByLesson.get(lesson.id) ?? [lesson.student_id];
+      const labels = ids
+        .map((id: string) =>
+          id === profile?.id
+            ? t('ui.studentLessons.you')
+            : (memberNameById.get(id) || '').trim().split(/\s+/)[0],
+        )
+        .filter(Boolean);
+      if (labels.length === 0) return null;
+      return labels.join(language === 'es' ? ' y ' : ' and ');
+    })();
 
     // 24-hour cancellation policy. Lesson date/time are in Cancun (UTC-5).
     const lessonStartMs = (() => {

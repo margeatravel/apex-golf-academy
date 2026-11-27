@@ -51,6 +51,54 @@ function firstOccurrenceOnOrAfter(base: Date, weekday: number) {
   return d;
 }
 
+// Who takes a lesson generated from this slot: the slot's predetermined
+// attendees (attendee_ids), or just the slot's student when none are set.
+// One lesson row = 1 package credit no matter how many attend together.
+function slotAttendeeIds(slot: any): string[] {
+  const ids = Array.isArray(slot?.attendee_ids)
+    ? slot.attendee_ids.filter((x: any) => typeof x === "string")
+    : [];
+  const unique = Array.from(new Set(ids)) as string[];
+  return unique.length > 0 ? unique : [slot.student_id];
+}
+
+async function insertLessonAttendees(supabase: any, lessonId: string, attendeeIds: string[]) {
+  if (!lessonId || attendeeIds.length === 0) return;
+  const { error } = await supabase
+    .from("lesson_attendees")
+    .insert(attendeeIds.map((id) => ({ lesson_id: lessonId, student_id: id })));
+  if (error) console.error("[generate-recurring-lessons] lesson_attendees insert failed:", error);
+}
+
+// Keep an already-generated lesson's attendees in sync with its slot: when
+// the coach changes who a spot is for, the next generation run updates the
+// future lessons instead of leaving them with the old attendees.
+async function syncLessonAttendees(supabase: any, lessonId: string, attendeeIds: string[]) {
+  if (!lessonId) return;
+  const { data: rows } = await supabase
+    .from("lesson_attendees")
+    .select("student_id")
+    .eq("lesson_id", lessonId);
+  const current = new Set<string>((rows ?? []).map((r: any) => r.student_id as string));
+  const wanted = new Set(attendeeIds);
+  const toAdd = attendeeIds.filter((id) => !current.has(id));
+  const toRemove = Array.from(current).filter((id) => !wanted.has(id));
+  if (toAdd.length > 0) {
+    const { error } = await supabase
+      .from("lesson_attendees")
+      .insert(toAdd.map((id) => ({ lesson_id: lessonId, student_id: id })));
+    if (error) console.error("[generate-recurring-lessons] lesson_attendees sync insert failed:", error);
+  }
+  if (toRemove.length > 0) {
+    const { error } = await supabase
+      .from("lesson_attendees")
+      .delete()
+      .eq("lesson_id", lessonId)
+      .in("student_id", toRemove);
+    if (error) console.error("[generate-recurring-lessons] lesson_attendees sync delete failed:", error);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -251,6 +299,7 @@ Deno.serve(async (req) => {
         .select("id")
         .single();
       if (insErr) throw insErr;
+      await insertLessonAttendees(supabase, insertedRow.id, slotAttendeeIds(slot));
 
       return new Response(
         JSON.stringify({ ok: true, lesson_id: insertedRow.id, created: true }),
@@ -661,6 +710,7 @@ Deno.serve(async (req) => {
       if (existsErr) throw existsErr;
 
       if (existing && existing.length > 0) {
+        await syncLessonAttendees(supabase, existing[0].id, slotAttendeeIds(slot));
         skipped++;
         continue;
       }
@@ -684,11 +734,12 @@ Deno.serve(async (req) => {
         .limit(1);
       if (sameDayErr) throw sameDayErr;
       if (sameDayForSlot && sameDayForSlot.length > 0) {
+        await syncLessonAttendees(supabase, sameDayForSlot[0].id, slotAttendeeIds(slot));
         skipped++;
         continue;
       }
 
-      const { error: insErr } = await supabase.from("lessons").insert({
+      const { data: insertedRow, error: insErr } = await supabase.from("lessons").insert({
         student_id: slot.student_id,
         lesson_date: dateStr,
         lesson_time: timeStr,
@@ -699,11 +750,12 @@ Deno.serve(async (req) => {
         recurring_slot_id: slot.id,
         auto_generated: true,
         currency: "MXN",
-      });
+      }).select("id").single();
       if (insErr) {
         console.error("[generate-recurring-lessons] insert error:", insErr);
         continue;
       }
+      await insertLessonAttendees(supabase, insertedRow.id, slotAttendeeIds(slot));
       inserted++;
       if (pkgId) {
         const cur = packageCap.get(pkgId) ?? 0;

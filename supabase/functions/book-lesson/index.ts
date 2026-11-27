@@ -23,23 +23,6 @@ function cancunWeekday(dateStr: string): number {
   return map[wd] ?? 0;
 }
 
-/** Monday (Mon–Sun week) of a YYYY-MM-DD date — same as generate-recurring-lessons. */
-function mondayOfISO(dateStr: string): string {
-  const [y, m, d] = dateStr.substring(0, 10).split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d));
-  dt.setUTCDate(dt.getUTCDate() - ((dt.getUTCDay() + 6) % 7));
-  return dt.toISOString().slice(0, 10);
-}
-
-/** Custom cadence (every N weeks): true on weeks the student actually comes. */
-function isCadenceWeek(dateStr: string, anchor: string | null | undefined, n: number | null | undefined): boolean {
-  if (!n || n <= 1 || !anchor) return true;
-  const a = Date.parse(`${mondayOfISO(String(anchor))}T00:00:00Z`);
-  const b = Date.parse(`${mondayOfISO(dateStr)}T00:00:00Z`);
-  const weeks = Math.round((b - a) / (7 * 86400000));
-  return weeks >= 0 && weeks % n === 0;
-}
-
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -73,7 +56,7 @@ serve(async (req) => {
     const studentId = userData.user.id;
 
     const body = await req.json().catch(() => ({}));
-    const { lessonDate, lessonTime, lessonType, notes, paymentMethod, packageId } = body || {};
+    const { lessonDate, lessonTime, lessonType, notes, paymentMethod, packageId, attendeeIds: requestedAttendeeIds } = body || {};
 
     if (!lessonDate || !lessonTime || !lessonType) {
       return new Response(JSON.stringify({ error: "lessonDate, lessonTime, lessonType are required" }), {
@@ -157,6 +140,31 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
       }
+    }
+
+    // Joint lessons: who attends. The booker always attends; extra attendees
+    // must belong to the package paying for the lesson (owner or member).
+    // Without a package (card/cash/membership) only the booker attends.
+    // One lesson row = 1 credit no matter how many attend together.
+    let attendeeIds: string[] = [studentId];
+    if (Array.isArray(requestedAttendeeIds) && requestedAttendeeIds.length > 0 && activePackageId) {
+      const wanted = Array.from(
+        new Set(requestedAttendeeIds.filter((x: any) => typeof x === "string")),
+      ) as string[];
+      const [{ data: pkgOwner }, { data: pkgMembers }] = await Promise.all([
+        admin.from("class_packages").select("user_id").eq("id", activePackageId).maybeSingle(),
+        admin.from("package_members").select("student_id").eq("package_id", activePackageId),
+      ]);
+      const allowed = new Set<string>([studentId, (pkgOwner as any)?.user_id].filter(Boolean));
+      (pkgMembers ?? []).forEach((m: any) => allowed.add(m.student_id));
+      const invalid = wanted.filter((id) => !allowed.has(id));
+      if (invalid.length > 0) {
+        return new Response(
+          JSON.stringify({ error: "invalid_attendee", message: "An attendee does not belong to this package." }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+      attendeeIds = Array.from(new Set([studentId, ...wanted]));
     }
 
     // Determine payment pathway
@@ -252,24 +260,6 @@ serve(async (req) => {
     }
 
     if (!allowed) {
-      // Recurring student not coming this date (paused before paused_until,
-      // or an off-cadence week) at this exact time — same rule (c) as
-      // get-available-slots.
-      const { data: cadenceSlots = [] } = await admin
-        .from("recurring_lesson_slots")
-        .select("start_time, coach_id, interval_weeks, interval_anchor, paused_until")
-        .eq("is_active", true)
-        .eq("weekday", wd);
-      allowed = (cadenceSlots || []).some(
-        (r: any) =>
-          ((r.start_time as string) || "").slice(0, 5) === requestedTime &&
-          (r.coach_id ?? DEFAULT_COACH_ID) === targetCoachId &&
-          ((!!r.paused_until && lessonDate < String(r.paused_until).slice(0, 10)) ||
-            (r.interval_weeks > 1 && !isCadenceWeek(lessonDate, r.interval_anchor, r.interval_weeks))),
-      );
-    }
-
-    if (!allowed) {
       return new Response(JSON.stringify({ error: "unavailable", message: "That time is not an open spot for your coach on this date." }), {
         status: 409, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -350,6 +340,12 @@ serve(async (req) => {
         status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
+
+    // One lesson row = 1 credit: record every attendee of this lesson.
+    const { error: attErr } = await admin.from("lesson_attendees").insert(
+      attendeeIds.map((id) => ({ lesson_id: inserted.id, student_id: id })),
+    );
+    if (attErr) console.error("insert lesson_attendees failed", attErr);
 
     // NOTE: Reserved (future) lessons must NOT consume the package.
     // Package counters are only decremented when a lesson is marked completed

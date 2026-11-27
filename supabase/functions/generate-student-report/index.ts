@@ -124,20 +124,38 @@ serve(async (req) => {
       return d.toISOString().slice(0, 10);
     })();
 
+    // Joint lessons: include lessons the student attended as a non-primary
+    // attendee (e.g. a shared-package hour taken together). A lesson matches
+    // once even if the student is both primary and attendee.
+    const { data: attRows } = await admin
+      .from("lesson_attendees")
+      .select("lesson_id")
+      .eq("student_id", student_id);
+    const attendeeLessonIds = (attRows ?? []).map((r: any) => r.lesson_id as string);
+    const lessonsForStudent = (cols: string) => {
+      let q = admin.from("lessons").select(cols);
+      if (attendeeLessonIds.length > 0) {
+        q = q.or(`student_id.eq.${student_id},id.in.(${attendeeLessonIds.join(",")})`);
+      } else {
+        q = q.eq("student_id", student_id);
+      }
+      return q;
+    };
+
     // Fetch all student data for the date range
     const [
       profileRes, lessonsRes, videosRes, mediaRes, roundsRes, packagesRes,
       handicapRes, standaloneNotesRes, histLessonsRes, histVideosRes,
     ] = await Promise.all([
       admin.from("profiles").select("full_name, email, plan_tier, handicap, manual_plan_override").eq("id", student_id).single(),
-      admin.from("lessons").select("id, lesson_date, lesson_time, lesson_type, status, coach_notes, student_notes, duration_minutes, package_id").eq("student_id", student_id).eq("skipped", false).eq("status", "completed").gte("lesson_date", date_start).lte("lesson_date", date_end).order("lesson_date"),
+      lessonsForStudent("id, lesson_date, lesson_time, lesson_type, status, coach_notes, student_notes, duration_minutes, package_id").eq("skipped", false).eq("status", "completed").gte("lesson_date", date_start).lte("lesson_date", date_end).order("lesson_date"),
       admin.from("videos").select("id, title, description, coach_feedback, next_steps, upload_date, category, lesson_id").eq("student_id", student_id).gte("upload_date", date_start + "T00:00:00").lte("upload_date", date_end + "T23:59:59").order("upload_date"),
       admin.from("student_media").select("title, uploaded_at, file_type").eq("student_id", student_id).gte("uploaded_at", date_start + "T00:00:00").lte("uploaded_at", date_end + "T23:59:59").order("uploaded_at"),
       admin.from("golf_rounds").select("played_on, total_score, course_par, course_name_snapshot, holes_played, fairways_hit, fairways_total, greens_in_regulation, putts, penalties, lost_balls, round_type, notes, birdies, bogeys, pars, doubles_plus, eagles, up_downs_attempted, up_downs_converted, par3_avg, par4_avg, par5_avg").eq("student_id", student_id).gte("played_on", date_start).lte("played_on", date_end).order("played_on"),
       admin.from("class_packages").select("id, package_name, package_size, classes_remaining, is_active, price, amount_paid, payment_date, payment_status").eq("user_id", student_id).order("payment_date", { ascending: false }),
       admin.from("handicap_history").select("handicap, recorded_at").eq("user_id", student_id).order("recorded_at"),
       admin.from("student_coach_notes").select("title, body, created_at").eq("student_id", student_id).order("created_at"),
-      admin.from("lessons").select("id, lesson_date, lesson_type, coach_notes, student_notes").eq("student_id", student_id).eq("skipped", false).eq("status", "completed").gte("lesson_date", histStart).lte("lesson_date", date_end),
+      lessonsForStudent("id, lesson_date, lesson_type, coach_notes, student_notes").eq("skipped", false).eq("status", "completed").gte("lesson_date", histStart).lte("lesson_date", date_end),
       admin.from("videos").select("upload_date, coach_feedback, next_steps, description, lesson_id").eq("student_id", student_id).gte("upload_date", histStart + "T00:00:00").lte("upload_date", date_end + "T23:59:59"),
     ]);
 
@@ -156,10 +174,7 @@ serve(async (req) => {
     // is known to drift), we also need the full lesson history per package for
     // each package we may show. Fetch all completed lessons for this student
     // (no date filter) and count by package_id.
-    const { data: allCompletedLessons } = await admin
-      .from("lessons")
-      .select("id, lesson_date, lesson_type, status, package_id")
-      .eq("student_id", student_id)
+    const { data: allCompletedLessons } = await lessonsForStudent("id, lesson_date, lesson_type, status, package_id")
       .eq("status", "completed");
     // Field/Playing lessons consume 2 package slots (matches DB function)
     const slotCost = (t?: string | null) =>

@@ -1,5 +1,5 @@
 import { LessonsGivenPdfButton } from '@/components/pdf/ScheduleExportButtons';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { fmtMXN } from '@/lib/formatCurrency';
 import { Link, useSearchParams } from 'react-router-dom';
 import { GlobalSearch } from '@/components/GlobalSearch';
@@ -45,7 +45,7 @@ type TabValue = 'all' | 'today' | 'upcoming' | 'completed' | 'cancelled' | 'no_s
 type SectionValue = 'lessons' | 'packages' | 'subscribers' | 'recurring' | 'imported' | 'calendar';
 
 export default function AdminLessons() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { isOwner, studentIds } = useAssignedStudentIds();
   const scopeKey = isOwner ? 'all' : `coach:${(studentIds ?? []).slice().sort().join(',')}`;
   const [searchParams] = useSearchParams();
@@ -101,6 +101,52 @@ export default function AdminLessons() {
     },
   });
 
+  // Attendee names per lesson (joint shared-package lessons have several).
+  // Falls back to the lesson's primary student when there are no rows yet.
+  const adminLessonIdsKey = (lessons as any[]).map((l) => l.id).sort().join(',');
+  const { data: adminLessonAttendees = [] } = useQuery({
+    queryKey: ['admin-lesson-attendees', adminLessonIdsKey],
+    enabled: (lessons as any[]).length > 0 && !isDemoModeActive(),
+    queryFn: async () => {
+      try {
+        const ids = (lessons as any[]).map((l) => l.id);
+        const { data, error } = await supabase
+          .from('lesson_attendees')
+          .select('lesson_id, student_id')
+          .in('lesson_id', ids)
+          .order('created_at', { ascending: true });
+        if (error) return [];
+        const rows = data ?? [];
+        const studentIds = Array.from(new Set(rows.map((r: any) => r.student_id)));
+        const nameById = new Map<string, string>();
+        if (studentIds.length > 0) {
+          const { data: profs } = await supabase
+            .from('profiles')
+            .select('id, full_name, email')
+            .in('id', studentIds);
+          (profs ?? []).forEach((p: any) => nameById.set(p.id, p.full_name || p.email || ''));
+        }
+        return rows.map((r: any) => ({ lesson_id: r.lesson_id, name: nameById.get(r.student_id) || '' }));
+      } catch {
+        return [];
+      }
+    },
+  });
+  const attendeeNamesByLesson = useMemo(() => {
+    const map = new Map<string, string[]>();
+    (adminLessonAttendees as any[]).forEach((r) => {
+      const list = map.get(r.lesson_id) ?? [];
+      if (r.name) list.push(r.name);
+      map.set(r.lesson_id, list);
+    });
+    return map;
+  }, [adminLessonAttendees]);
+  const lessonStudentLabel = (lesson: any): string => {
+    const names = attendeeNamesByLesson.get(lesson.id) ?? [];
+    if (names.length > 0) return names.join(language === 'es' ? ' y ' : ' and ');
+    return lesson.profiles?.full_name || lesson.profiles?.email || 'Unknown';
+  };
+
   const { data: recurringCount = 0 } = useQuery({
     queryKey: ['admin-recurring-slots-count', isDemoModeActive() ? 'demo' : 'live', scopeKey],
     queryFn: async () => {
@@ -122,10 +168,10 @@ export default function AdminLessons() {
   const todayStr = getTodayInAppTimezone();
 
   const filteredLessons = lessons.filter((lesson: any) => {
-    // Student name/email filter
+    // Student name/email filter (matches any attendee of a joint lesson)
     if (studentFilter.trim()) {
       const q = studentFilter.trim().toLowerCase();
-      const name = (lesson.profiles?.full_name || '').toLowerCase();
+      const name = lessonStudentLabel(lesson).toLowerCase();
       const email = (lesson.profiles?.email || '').toLowerCase();
       const invitee = (lesson.invitee_name || '').toLowerCase();
       if (!name.includes(q) && !email.includes(q) && !invitee.includes(q)) return false;
@@ -487,10 +533,10 @@ export default function AdminLessons() {
                             <TableCell>
                               <div className="flex items-center gap-2">
                                 <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-primary-foreground font-bold text-xs">
-                                  {lesson.profiles?.full_name?.charAt(0) || lesson.profiles?.email?.charAt(0)?.toUpperCase() || '?'}
+                                  {lessonStudentLabel(lesson)?.charAt(0) || lesson.profiles?.email?.charAt(0)?.toUpperCase() || '?'}
                                 </div>
                                 <span className="font-medium">
-                                  {lesson.profiles?.full_name || lesson.profiles?.email || 'Unknown'}
+                                  {lessonStudentLabel(lesson)}
                                 </span>
                               </div>
                             </TableCell>

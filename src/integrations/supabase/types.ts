@@ -1399,6 +1399,35 @@ export type Database = {
         }
         Relationships: []
       }
+      lesson_attendees: {
+        Row: {
+          created_at: string
+          id: string
+          lesson_id: string
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          lesson_id: string
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_attendees_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           ar_status: string
@@ -2297,6 +2326,7 @@ export type Database = {
       }
       recurring_lesson_slots: {
         Row: {
+          attendee_ids: string[] | null
           coach_id: string | null
           created_at: string
           duration_minutes: number
@@ -2328,6 +2358,7 @@ export type Database = {
         }
         Insert: {
           coach_id?: string | null
+          attendee_ids?: string[] | null
           created_at?: string
           duration_minutes?: number
           ends_on?: string | null
@@ -2358,6 +2389,7 @@ export type Database = {
         }
         Update: {
           coach_id?: string | null
+          attendee_ids?: string[] | null
           created_at?: string
           duration_minutes?: number
           ends_on?: string | null

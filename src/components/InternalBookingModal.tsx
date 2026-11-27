@@ -3,6 +3,7 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import {
@@ -23,6 +24,7 @@ import { fmtMXNStr } from '@/lib/formatCurrency';
 import { useCoachLessonPricing } from '@/hooks/useCoachLessonPricing';
 import { localeFor } from '@/lib/uiLocale';
 import { formatLessonDate } from '@/lib/formatLessonDateTime';
+import { fetchPackageMemberOptions, firstNameOf } from '@/lib/sharedPackageMembers';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
@@ -100,6 +102,8 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'package' | 'cash_transfer' | 'card'>('package');
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  // Joint lessons: who attends. Null = default (just the booker).
+  const [attendeeIds, setAttendeeIds] = useState<string[] | null>(null);
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   const lessonTypeLabel = (v: string) =>
@@ -158,6 +162,15 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
     },
   });
 
+  // Members of the chosen package (owner + shared members) for the
+  // "¿Quién toma la clase?" picker. Only shown when the package is shared.
+  const { data: attendeeOptions = [] } = useQuery({
+    queryKey: ['booking-package-members', selectedPackageId],
+    enabled: !!open && paymentMethod === 'package' && !!selectedPackageId,
+    queryFn: () => fetchPackageMemberOptions(selectedPackageId!),
+    staleTime: 30_000,
+  });
+
   // Open weekly spots (unclaimed recurring slots) for the fixed-schedule flow.
   const { data: fixedSlots = [], isLoading: fixedLoading } = useQuery({
     queryKey: ['booking-open-fixed-slots'],
@@ -206,6 +219,11 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
     paidWith: 'package' | 'membership' | 'card' | 'cash_transfer';
   } | null>(null);
 
+  // Reset attendee choice when the package changes (different members).
+  useEffect(() => {
+    setAttendeeIds(null);
+  }, [selectedPackageId]);
+
   // Reset on close
   useEffect(() => {
     if (!open) {
@@ -222,6 +240,7 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
       setPaymentMethod('package');
       setSelectedPackageId(null);
       setAuthTimedOut(false);
+      setAttendeeIds(null);
     }
   }, [open, today]);
 
@@ -393,6 +412,7 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
             : paymentMethod === 'card' ? 'card'
             : undefined,
           packageId: paymentMethod === 'package' ? (selectedPackageId ?? undefined) : undefined,
+          attendeeIds: paymentMethod === 'package' && attendeeIds ? attendeeIds : undefined,
         }),
       });
       const body = await r.json().catch(() => ({}));
@@ -832,6 +852,35 @@ export function InternalBookingModal({ open, onOpenChange, prefillDate, prefillT
                               ))}
                             </SelectContent>
                           </Select>
+                        </div>
+                      )}
+
+                      {/* Shared package: who takes this lesson? Default = just you. */}
+                      {paymentMethod === 'package' && attendeeOptions.length > 1 && (
+                        <div className="pl-1 space-y-2">
+                          <Label className="text-ivory/60 text-xs">{t('misc.bookingWhoAttends')}</Label>
+                          <div className="space-y-1.5">
+                            {attendeeOptions.map((m) => {
+                              const isSelf = m.id === profile?.id;
+                              const selected = (attendeeIds ?? [profile?.id]).includes(m.id);
+                              return (
+                                <label key={m.id} className="flex items-center gap-2 text-sm text-ivory/85 cursor-pointer">
+                                  <Checkbox
+                                    checked={selected}
+                                    disabled={isSelf}
+                                    onCheckedChange={(v) => {
+                                      const next = new Set(attendeeIds ?? [profile?.id]);
+                                      if (v === true) next.add(m.id);
+                                      else next.delete(m.id);
+                                      setAttendeeIds(Array.from(next));
+                                    }}
+                                  />
+                                  <span>{isSelf ? t('misc.bookingYou') : firstNameOf(m.fullName)}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                          <p className="text-[11px] text-ivory/40">{t('misc.bookingJointHint')}</p>
                         </div>
                       )}
 
