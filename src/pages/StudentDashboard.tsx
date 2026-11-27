@@ -14,6 +14,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useVisibleRecurringSlots } from '@/hooks/useVisibleRecurringSlots';
+import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
 import { StudentStartsOnBadge } from '@/components/student/StudentStartsOnBadge';
 import { CadenceBadge } from '@/components/recurring/CadenceBadge';
 import { getFunctionErrorMessage } from '@/lib/functionError';
@@ -447,6 +448,37 @@ export default function StudentDashboard() {
     enabled: !!profile?.id,
   });
 
+  // Latest video the student can open (videos + coach-uploaded media) — preview on the Mis Videos card.
+  const canAccessVideos = hasVideosAccess(effectivePlan, graceUntil, trialEndsAt);
+  const { data: latestVideo } = useQuery({
+    queryKey: ['student-latest-video', profile?.id],
+    queryFn: async () => {
+      const [{ data: vids }, { data: media }] = await Promise.all([
+        supabase
+          .from('videos')
+          .select('id, title, file_type, category, upload_date, thumbnail_url')
+          .eq('student_id', profile!.id)
+          .order('upload_date', { ascending: false })
+          .limit(1),
+        supabase
+          .from('student_media' as any)
+          .select('id, title, file_url, file_type, thumbnail_url, uploaded_at')
+          .eq('student_id', profile!.id)
+          .order('uploaded_at', { ascending: false })
+          .limit(1),
+      ]);
+      const v = (vids || [])[0] as any;
+      const m = (media || [])[0] as any;
+      const vDate = v ? new Date(v.upload_date).getTime() : 0;
+      const mDate = m ? new Date(m.uploaded_at).getTime() : 0;
+      if (m && mDate > vDate) return { title: m.title || 'Media', thumbnail_url: m.thumbnail_url ?? null } as const;
+      if (v) return { title: v.title, thumbnail_url: v.thumbnail_url ?? null } as const;
+      return null;
+    },
+    enabled: !!profile?.id && canAccessVideos,
+  });
+  const latestVideoThumb = useSignedMediaUrl(latestVideo?.thumbnail_url ?? null);
+
   // ── Lesson pricing (per-coach; the student's assigned coach controls it) ──
   // When an admin launches Student Preview from a specific coach row, override
   // the pricing coach id so this reflects that coach's config.
@@ -828,16 +860,16 @@ export default function StudentDashboard() {
               </Button>
             </section>
           )}
-          <section className="lesson-glass min-w-0 rounded-lg px-3 py-2.5" data-tour="next-lesson">
+          <section className="lesson-glass min-w-0 rounded-lg px-3.5 py-3" data-tour="next-lesson">
             {nextLesson ? (
               <Link to="/lessons" className="flex items-center gap-2.5">
-                <span aria-hidden="true" className="relative flex h-2.5 w-2.5 shrink-0">
+                <span aria-hidden="true" className="relative flex h-3 w-3 shrink-0">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-green-accent opacity-70 motion-safe:animate-ping" />
-                  <span className="lesson-live-dot relative inline-flex h-2.5 w-2.5 rounded-full bg-green-accent" />
+                  <span className="lesson-live-dot relative inline-flex h-3 w-3 rounded-full bg-green-accent" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[10px] uppercase tracking-wide text-ivory/55">{t('dashboard.nextLesson')}</span>
-                  <span className="block text-ivory text-sm font-semibold leading-tight truncate">
+                  <span className="block text-ivory text-[15px] font-semibold leading-tight truncate">
                     {formatLessonDate(nextLesson, 'monthDay', localeFor(language))} · {formatLessonTime(nextLesson)} · {nextLesson.duration_minutes ?? 60} min{nextLesson.takenByName ? ` · ${t('ui.studentLessons.sharedPackageTag')}` : ''}
                   </span>
                 </span>
@@ -845,9 +877,9 @@ export default function StudentDashboard() {
               </Link>
             ) : (
               <button type="button" onClick={openBookingFlow} className="flex items-center gap-2.5 w-full text-left">
-                <span aria-hidden="true" className="relative flex h-2.5 w-2.5 shrink-0">
+                <span aria-hidden="true" className="relative flex h-3 w-3 shrink-0">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-green-accent opacity-70 motion-safe:animate-ping" />
-                  <span className="lesson-live-dot relative inline-flex h-2.5 w-2.5 rounded-full bg-green-accent" />
+                  <span className="lesson-live-dot relative inline-flex h-3 w-3 rounded-full bg-green-accent" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[10px] uppercase tracking-wide text-ivory/55">{t('dashboard.nextLesson')}</span>
@@ -1047,18 +1079,25 @@ export default function StudentDashboard() {
           data-tour="game-stats"
         >
           <div
-            className="relative h-[120px] flex items-center justify-center"
-            style={{ background: 'linear-gradient(135deg,#1d4a2e 0%,#0f2a1a 55%,#0a1810 100%)' }}
+            className="relative h-[120px] overflow-hidden"
+            style={latestVideoThumb ? undefined : { background: 'linear-gradient(135deg,#1d4a2e 0%,#0f2a1a 55%,#0a1810 100%)' }}
           >
-            <div aria-hidden className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 120%,rgba(240,192,64,0.18),transparent 60%)' }} />
-            <div
-              className="relative h-[52px] w-[52px] rounded-full flex items-center justify-center"
-              style={{ background: 'rgba(240,192,64,0.9)', boxShadow: '0 6px 24px rgba(240,192,64,0.45)' }}
-            >
-              <Play className="h-5 w-5" fill="#12291c" color="#12291c" />
+            {latestVideoThumb ? (
+              <img src={latestVideoThumb} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <div aria-hidden className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 120%,rgba(240,192,64,0.18),transparent 60%)' }} />
+            )}
+            <div aria-hidden className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(0,0,0,0.05) 40%, rgba(0,0,0,0.55) 100%)' }} />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div
+                className="h-[52px] w-[52px] rounded-full flex items-center justify-center"
+                style={{ background: 'rgba(240,192,64,0.9)', boxShadow: '0 6px 24px rgba(0,0,0,0.45)' }}
+              >
+                <Play className="h-5 w-5" fill="#12291c" color="#12291c" />
+              </div>
             </div>
-            <span className="absolute left-3 bottom-2.5 text-[11px] text-ivory/85 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.45)' }}>
-              {language === 'es' ? 'Análisis de swing' : 'Swing analysis'}
+            <span className="absolute left-3 bottom-2.5 text-[11px] text-ivory/90 px-2 py-0.5 rounded-full max-w-[85%] truncate" style={{ background: 'rgba(0,0,0,0.55)' }}>
+              {latestVideo ? latestVideo.title : (language === 'es' ? 'Análisis de swing' : 'Swing analysis')}
             </span>
           </div>
           <div className="px-3 py-3 flex items-center gap-2">
