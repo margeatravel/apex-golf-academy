@@ -7,7 +7,7 @@ import {
   Calendar, Video, LogOut, User, Star, Loader2, Plus, Minus,
   ChevronRight, MessageCircle, Bell, Smartphone, UserCog,
   Home, CalendarCheck, GraduationCap, CircleDot, Sparkles, Repeat,
-  TrendingDown, TrendingUp, Trophy, Minus as MinusIcon, RefreshCw, Lock,
+  TrendingDown, TrendingUp, Trophy, Minus as MinusIcon, RefreshCw, Lock, Play,
 } from 'lucide-react';
 import { Package as PackageIcon, Crown } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
@@ -828,30 +828,33 @@ export default function StudentDashboard() {
               </Button>
             </section>
           )}
-          <section className="lesson-glass min-w-0 flex flex-col rounded-lg p-3" data-tour="next-lesson">
-            <div className="flex items-center gap-1.5 text-green-accent">
-              <span aria-hidden="true" className="relative flex h-3 w-3 shrink-0">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-green-accent opacity-70 motion-safe:animate-ping" />
-                <span className="lesson-live-dot relative inline-flex h-3 w-3 rounded-full bg-green-accent" />
-              </span>
-              <p className="text-xs font-medium text-ivory/75">{t('dashboard.nextLesson')}</p>
-            </div>
+          <section className="lesson-glass min-w-0 rounded-lg px-3 py-2.5" data-tour="next-lesson">
             {nextLesson ? (
-              <>
-                <p className="text-ivory text-base font-semibold mt-2 leading-tight">{formatLessonDate(nextLesson, 'monthDay', localeFor(language))} · {formatLessonTime(nextLesson)}</p>
-                <p className="text-ivory/65 text-xs mt-1 leading-snug">{nextLesson.duration_minutes ?? 60} min · {translateLessonType(nextLesson.lesson_type, language)}</p>
-                {nextLesson.takenByName && <p className="text-gold text-[10px] mt-1">{t('ui.studentLessons.sharedPackageTag')}</p>}
-                <Button asChild variant="ghost" size="sm" className="mt-2 h-8 w-full justify-between border border-border bg-secondary px-2 text-xs text-ivory hover:text-ivory hover:bg-green-accent/20">
-                  <Link to="/lessons">{language === 'es' ? 'Ver clase' : 'View lesson'}<ChevronRight /></Link>
-                </Button>
-              </>
+              <Link to="/lessons" className="flex items-center gap-2.5">
+                <span aria-hidden="true" className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-accent opacity-70 motion-safe:animate-ping" />
+                  <span className="lesson-live-dot relative inline-flex h-2.5 w-2.5 rounded-full bg-green-accent" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] uppercase tracking-wide text-ivory/55">{t('dashboard.nextLesson')}</span>
+                  <span className="block text-ivory text-sm font-semibold leading-tight truncate">
+                    {formatLessonDate(nextLesson, 'monthDay', localeFor(language))} · {formatLessonTime(nextLesson)} · {nextLesson.duration_minutes ?? 60} min{nextLesson.takenByName ? ` · ${t('ui.studentLessons.sharedPackageTag')}` : ''}
+                  </span>
+                </span>
+                <ChevronRight className="h-4 w-4 shrink-0 ml-auto text-ivory/50" />
+              </Link>
             ) : (
-              <>
-                <p className="text-ivory/65 text-xs mt-2 leading-snug">{t('dashboard.noUpcomingLesson')}</p>
-                <Button variant="ghost" size="sm" onClick={openBookingFlow} className="mt-auto h-8 w-full justify-between px-0 pt-2 text-xs text-gold hover:text-gold hover:bg-gold/10">
-                  {language === 'es' ? 'Reservar' : 'Book'}<ChevronRight />
-                </Button>
-              </>
+              <button type="button" onClick={openBookingFlow} className="flex items-center gap-2.5 w-full text-left">
+                <span aria-hidden="true" className="relative flex h-2.5 w-2.5 shrink-0">
+                  <span className="absolute inline-flex h-full w-full rounded-full bg-green-accent opacity-70 motion-safe:animate-ping" />
+                  <span className="lesson-live-dot relative inline-flex h-2.5 w-2.5 rounded-full bg-green-accent" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] uppercase tracking-wide text-ivory/55">{t('dashboard.nextLesson')}</span>
+                  <span className="block text-ivory/65 text-xs leading-snug">{t('dashboard.noUpcomingLesson')}</span>
+                </span>
+                <span className="ml-auto shrink-0 text-xs font-medium text-gold">{language === 'es' ? 'Reservar' : 'Book'} ›</span>
+              </button>
             )}
           </section>
         </div>
@@ -865,7 +868,7 @@ export default function StudentDashboard() {
           {/* ── LEFT COLUMN (lg+) ── */}
           <div className="contents lg:block lg:col-span-2 lg:space-y-4">
 
-        {/* ── PRO ZONE (full-width, gold accent) ── */}
+        {/* ── PRO ZONE (tarjeta, en el lugar y tamaño de Mis Clases — Inicio v4, 27 Nov 2026) ── */}
         <Link
           to="/pro-zone"
           style={{
@@ -876,10 +879,10 @@ export default function StudentDashboard() {
             boxShadow:
               '0 8px 28px rgba(240,192,64,0.10), inset 0 1px 0 rgba(255,255,255,0.06)',
           }}
-          className="order-2 lg:order-none px-4 py-4 flex items-center justify-between gap-3 transition-all duration-200 lg:hover:-translate-y-0.5"
+          className="order-2 lg:order-none px-4 py-4 block transition-all duration-200 lg:hover:-translate-y-0.5"
           data-tour="pro-zone"
         >
-          <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-3">
             <div
               className="h-11 w-11 rounded-2xl flex items-center justify-center flex-shrink-0"
               style={{
@@ -896,18 +899,22 @@ export default function StudentDashboard() {
               >
                 {t('dashboard.proZoneStar')}
               </p>
-              <p className="text-ivory text-sm font-semibold mt-1.5 truncate lg:whitespace-normal lg:overflow-visible">
+              <p className="text-ivory text-[15px] font-semibold mt-1 leading-snug">
                 {t('dashboard.proZoneRowSub')}
               </p>
             </div>
+            <ChevronRight className="h-4 w-4 text-gold-accent/70 flex-shrink-0 ml-auto" />
           </div>
-          <ChevronRight className="h-4 w-4 text-gold-accent/70 flex-shrink-0" />
+          <div className="flex gap-1.5 mt-3.5 flex-wrap">
+            <span className="text-[11px] text-ivory/80 px-2.5 py-1 rounded-full" style={{ background: 'rgba(240,192,64,0.12)', border: '1px solid rgba(240,192,64,0.30)' }}>{t('dashboard.proZoneChipRounds')}</span>
+            <span className="text-[11px] text-ivory/80 px-2.5 py-1 rounded-full" style={{ background: 'rgba(240,192,64,0.12)', border: '1px solid rgba(240,192,64,0.30)' }}>{t('dashboard.proZoneChipLibrary')}</span>
+            <span className="text-[11px] text-ivory/80 px-2.5 py-1 rounded-full" style={{ background: 'rgba(240,192,64,0.12)', border: '1px solid rgba(240,192,64,0.30)' }}>{t('dashboard.proZoneChipStats')}</span>
+          </div>
         </Link>
 
-        {/* ── STATS ROW (3 columns) ── */}
-        <div className="order-3 lg:order-none grid grid-cols-3 gap-2 [&>a]:min-w-0 [&>a]:px-2 [&>div]:min-w-0 [&>button]:min-w-0">
-          {/* Handicap — semicircle gauge */}
-          {(() => {
+        {/* ── INICIO v4 (27 Nov 2026): Handicap quitado del inicio por decisión de Santiago. Código conservado con false &&, no borrado. ── */}
+        {false && (
+          (() => {
             const current = profile?.handicap;
             const goal = (profile as any)?.handicap_goal;
             // Left end (high handicap) is fixed at 36 (max standard handicap)
@@ -989,145 +996,160 @@ export default function StudentDashboard() {
                 )}
               </Link>
             );
-          })()}
+          })()
+        )}
 
-          {/* Lessons */}
-          <Link to="/lessons" style={glassStyle} className="px-3 py-3 flex flex-col items-center text-center hover:brightness-110 transition">
-            <p className="text-ivory/50 text-[10px] uppercase leading-tight">{t('dashboard.myLessons')}</p>
-
-            {/* Active package: taken + remaining (vigent package only) */}
-            {activePackageProgress ? (
-              <>
-                <p className="text-ivory font-heading font-bold text-xl leading-tight mt-2">{activePackageProgress.remaining}</p>
-                <p className="text-ivory/75 text-[10px] leading-tight">{t('dashboard.leftShort')}</p>
-                <p className="text-ivory/65 text-[10px] leading-tight mt-1">{activePackageProgress.used} {t('dashboard.takenShort')}</p>
-                <p className="text-ivory/55 text-[9px] mt-1">
-                  {t('dashboard.ofTotalShort')} {activePackageProgress.size}
-                </p>
-                <div
-                  className="w-full h-1.5 rounded-full overflow-hidden mt-1.5"
-                  style={{ background: 'rgba(255,255,255,0.08)' }}
-                >
-                  <div
-                    className="h-full rounded-full transition-all duration-700"
+        {/* ── MIS CLASES (banner, en el lugar y tamaño de Pro Zone — Inicio v4) ── */}
+        <Link
+          to="/lessons"
+          style={glassStyle}
+          className="order-4 lg:order-none px-3 py-3 flex items-center gap-3 hover:brightness-110 transition"
+        >
+          {activePackageProgress ? (
+            <>
+              <span className="text-ivory font-heading font-bold text-[28px] leading-none shrink-0">
+                {activePackageProgress.remaining}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-ivory text-[13px] font-semibold leading-tight truncate">
+                  {t('dashboard.leftShort')} {t('dashboard.ofTotalShort')} {activePackageProgress.size} · {activePackageProgress.used} {t('dashboard.takenShort')}
+                </span>
+                <span className="block w-full h-1.5 rounded-full overflow-hidden mt-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+                  <span
+                    className="block h-full rounded-full transition-all duration-700"
                     style={{
                       width: `${activePackageProgress.pct}%`,
                       background: 'linear-gradient(90deg, #4a7c59, #7CC598)',
-                      boxShadow: '0 0 8px rgba(124,197,152,0.5)',
                     }}
                   />
-                </div>
-              </>
-            ) : (
-              <p className="text-ivory font-heading font-bold text-sm leading-tight mt-1.5">
-                {t('dashboard.noActivePackage')}
-              </p>
-            )}
+                </span>
+                <span className="block text-ivory/55 text-[11px] mt-1.5 truncate">
+                  {t('dashboard.myLessons')}
+                  {sharedWithLabel ? ` · ${sharedWithLabel}` : ''}
+                  {looseTakenLessons > 0 ? ` · ${looseTakenLessons} ${looseTakenLessons === 1 ? t('dashboard.looseLesson') : t('dashboard.looseLessons')}` : ''}
+                </span>
+              </span>
+            </>
+          ) : (
+            <span className="min-w-0 flex-1">
+              <span className="block text-ivory text-[13px] font-semibold leading-tight">{t('dashboard.noActivePackage')}</span>
+              <span className="block text-ivory/55 text-[11px] mt-1">{t('dashboard.myLessons')}</span>
+            </span>
+          )}
+          <ChevronRight className="h-4 w-4 text-ivory/50 shrink-0" />
+        </Link>
 
-            {/* Loose (individual) lessons taken, not tied to any package */}
-            <div className="w-full h-px bg-ivory/10 my-2" />
-            <p className="text-ivory font-heading font-bold text-base leading-tight">
-              {looseTakenLessons}
-            </p>
-            <p className="text-ivory/55 text-[9px] mt-1">
-              {looseTakenLessons === 1 ? t('dashboard.looseLesson') : t('dashboard.looseLessons')}
-            </p>
-            {activePackageProgress && sharedWithLabel && (
-              <p className="text-ivory/45 text-[8px] mt-1 leading-tight">{sharedWithLabel}</p>
-            )}
-          </Link>
-
-          {/* Priority Spot */}
-          {recurringSlots.length > 0 ? (
+        {/* ── MIS VIDEOS (tarjeta grande — Inicio v4) ── */}
+        <Link
+          to="/videos"
+          style={glassStyle}
+          className="order-5 lg:order-none overflow-hidden block hover:brightness-110 transition"
+          data-tour="game-stats"
+        >
+          <div
+            className="relative h-[120px] flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg,#1d4a2e 0%,#0f2a1a 55%,#0a1810 100%)' }}
+          >
+            <div aria-hidden className="absolute inset-0" style={{ background: 'radial-gradient(ellipse at 50% 120%,rgba(240,192,64,0.18),transparent 60%)' }} />
             <div
+              className="relative h-[52px] w-[52px] rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(240,192,64,0.9)', boxShadow: '0 6px 24px rgba(240,192,64,0.45)' }}
+            >
+              <Play className="h-5 w-5" fill="#12291c" color="#12291c" />
+            </div>
+            <span className="absolute left-3 bottom-2.5 text-[11px] text-ivory/85 px-2 py-0.5 rounded-full" style={{ background: 'rgba(0,0,0,0.45)' }}>
+              {language === 'es' ? 'Análisis de swing' : 'Swing analysis'}
+            </span>
+          </div>
+          <div className="px-3 py-3 flex items-center gap-2">
+            <div className="min-w-0">
+              <p className="text-ivory text-[15px] font-semibold leading-tight">{t('admin.myVideosTitle')}</p>
+              <p className="text-ivory/60 text-xs mt-0.5 leading-snug">{t('admin.myVideosSub')}</p>
+            </div>
+            <ChevronRight className="h-4 w-4 text-ivory/50 shrink-0 ml-auto" />
+          </div>
+        </Link>
+        {/* ── SCORE / METRIC TREND (mobile + desktop, same component) ── */}
+        <div className="order-[6] lg:order-none">
+          <DesktopScoreTrendCard studentId={profile?.id} />
+        </div>
+        <div className="hidden lg:block">
+          <DesktopPackageProgressCard studentId={profile?.id} />
+        </div>
+
+
+        {/* ── MY CHILDREN (below package progress, full width of the left column) ── */}
+        <MyChildrenCard />
+          </div>
+
+          {/* ── RIGHT COLUMN (lg+) ── */}
+          <div className="contents lg:block lg:space-y-4">
+
+        {/* ── LUGAR PRIORITARIO + MARGEA IA (Inicio v4) ── */}
+        <div className="order-3 lg:order-none grid grid-cols-2 lg:grid-cols-1 gap-3">
+          {/* Priority Spot — tile compacto (máx. 2 horarios, el resto en Mi horario) */}
+          {recurringSlots.length > 0 ? (
+            <button
+              type="button"
+              onClick={() => setMyScheduleOpen(true)}
               style={{
                 ...glassStyle,
-                position: 'relative',
                 borderColor: 'rgba(240,192,64,0.40)',
                 boxShadow: '0 0 0 1px rgba(240,192,64,0.08) inset, 0 8px 28px -14px rgba(240,192,64,0.22)',
                 background: 'linear-gradient(160deg, rgba(240,192,64,0.08), rgba(255,255,255,0.06))',
               }}
-              className="px-2 py-3 flex flex-col justify-center text-center"
+              className="px-3 py-3 flex flex-col text-left hover:brightness-110 transition min-w-0"
+              aria-label={t('home.viewPrioritySpotDetails')}
             >
-              {/* Tap opens "Mi horario recurrente" (view + request a change) instead of /lessons. */}
-              <button
-                type="button"
-                onClick={() => setMyScheduleOpen(true)}
-                className="absolute inset-0 rounded-[inherit] cursor-pointer"
-                aria-label={t('home.viewPrioritySpotDetails')}
-              />
-              <div className="relative pointer-events-none min-h-0 max-h-[192px] overflow-y-auto">
-              {/* Header: golden label */}
-              <div className="flex items-start justify-center gap-1 min-w-0 mb-2">
-                  <Repeat className="h-3 w-3 text-gold-accent flex-shrink-0 mt-0.5" />
-                  <p className="text-gold text-[10px] uppercase leading-tight whitespace-normal">
-                    {t('dashboard.prioritySpot')}
-                  </p>
-              </div>
-
-              {/* All active slots, stacked, ordered by weekday + time */}
-              {recurringSlots.map((s: any, i: number) => (
-                <div key={s.id ?? i} className="min-w-0">
-                  {i > 0 && (
-                    <div className="my-2" style={{ borderTop: '1px solid rgba(240,192,64,0.15)' }} />
-                  )}
-                  {/* Day + time, compact */}
-                  <p className="text-ivory font-heading font-bold text-[15px] leading-tight truncate">
+              <span className="flex items-center gap-1 min-w-0">
+                <Repeat className="h-3 w-3 text-gold-accent flex-shrink-0" />
+                <span className="text-gold text-[10px] uppercase leading-tight whitespace-normal">
+                  {t('dashboard.prioritySpot')}
+                </span>
+              </span>
+              {recurringSlots.slice(0, 2).map((s: any, i: number) => (
+                <span key={s.id ?? i} className="block mt-1.5 min-w-0">
+                  <span className="block text-ivory font-heading font-bold text-[15px] leading-tight truncate">
                     {DAYS_FULL[s.weekday]}
-                  </p>
-                  <p className="text-ivory/75 text-[11px] mt-0.5 whitespace-nowrap">{fmtTime12(s.start_time)}</p>
-                  <p className="text-ivory/55 text-[10px] mt-0.5">{s.duration_minutes} min</p>
-                  <StudentStartsOnBadge startsOn={s.starts_on} className="mt-1" />
-                  <CadenceBadge weeks={s.interval_weeks} className="mt-1 ml-1" />
-                  {!s.is_own && (
-                    <span
-                      className="inline-block mt-1 px-2 py-0.5 rounded-full text-[10px] truncate max-w-full"
-                      style={{ background: 'rgba(74,124,89,0.18)', color: '#7BC894' }}
-                    >
-                      {t('ui.studentLessons.sharedPackageTag')}
-                    </span>
-                  )}
-                  {/* Status badge + recurring hint */}
-                  <div className="mt-2 flex items-center justify-center gap-1.5 flex-wrap">
-                    <span
-                      className="text-[8px] font-semibold uppercase px-1 py-0.5 rounded-full inline-flex items-center gap-1"
-                      style={{
-                        background: 'rgba(74,124,89,0.22)',
-                        color: '#7CC598',
-                        border: '1px solid rgba(74,124,89,0.45)',
-                      }}
-                    >
-                      <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#7CC598' }} />
-                      {t('dashboard.confirmed')}
-                    </span>
-                    <span className="text-ivory/45 text-[10px] inline-flex items-center gap-1">
-                      <Repeat className="h-2.5 w-2.5" />
-                      {t('dashboard.weekly')}
-                    </span>
-                  </div>
-                </div>
+                  </span>
+                  <span className="block text-ivory/75 text-[11px] mt-0.5 whitespace-nowrap">{fmtTime12(s.start_time)}</span>
+                </span>
               ))}
-              </div>
-            </div>
-          ) : isPaid ? (() => {
-            const isApex = effectivePlan === 'apex';
-            const accent = isApex ? '#3887FF' : '#F0C040';
-            const accentSoft = isApex ? 'rgba(56,135,255,' : 'rgba(240,192,64,';
-            return (
+              {recurringSlots.length > 2 && (
+                <span className="block text-ivory/55 text-[10px] mt-1">
+                  +{recurringSlots.length - 2} {language === 'es' ? 'más' : 'more'}
+                </span>
+              )}
+              <span
+                className="mt-2 self-start text-[8px] font-semibold uppercase px-1.5 py-0.5 rounded-full inline-flex items-center gap-1"
+                style={{
+                  background: 'rgba(74,124,89,0.22)',
+                  color: '#7CC598',
+                  border: '1px solid rgba(74,124,89,0.45)',
+                }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full" style={{ background: '#7CC598' }} />
+                {t('dashboard.confirmed')}
+              </span>
+              {recurringSlots.slice(0, 2).some((s: any) => !s.is_own) && (
+                <span className="mt-1.5 text-[10px] text-ivory/55 truncate">{t('ui.studentLessons.sharedPackageTag')}</span>
+              )}
+            </button>
+          ) : isPaid ? (
             <Link
               to="/lessons/fixed-schedule"
               style={glassStyle}
-              className="px-2 py-3 flex flex-col items-center justify-center text-center relative overflow-hidden"
+              className="px-2 py-3 flex flex-col items-center justify-center text-center relative overflow-hidden min-w-0"
             >
               <div
                 aria-hidden
                 className="absolute -top-6 -right-6 h-20 w-20 rounded-full pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${accentSoft}0.25), transparent 70%)` }}
+                style={{ background: 'radial-gradient(circle, rgba(240,192,64,0.25), transparent 70%)' }}
               />
               <div className="relative">
                 <div className="flex items-center justify-center gap-1.5">
-                  <Lock className="h-3 w-3" style={{ color: accent }} />
-                  <p className="text-[10px] uppercase leading-tight" style={{ color: accent }}>
+                  <Lock className="h-3 w-3" style={{ color: '#F0C040' }} />
+                  <p className="text-[10px] uppercase leading-tight" style={{ color: '#F0C040' }}>
                     {t('dashboard.prioritySpot')}
                   </p>
                 </div>
@@ -1141,22 +1163,21 @@ export default function StudentDashboard() {
               <span
                 className="relative mt-2.5 text-[11px] font-semibold inline-flex items-center justify-center gap-1 px-2 py-1.5 rounded-full self-center"
                 style={{
-                  background: `linear-gradient(135deg, ${accentSoft}0.22), ${accentSoft}0.10))`,
-                  border: `1px solid ${accentSoft}0.45)`,
-                  color: accent,
-                  boxShadow: `0 0 12px ${accentSoft}0.25)`,
+                  background: 'linear-gradient(135deg, rgba(240,192,64,0.22), rgba(240,192,64,0.10))',
+                  border: '1px solid rgba(240,192,64,0.45)',
+                  color: '#F0C040',
+                  boxShadow: '0 0 12px rgba(240,192,64,0.25)',
                 }}
               >
                 {language === 'es' ? 'Ver opciones' : 'View options'} →
               </span>
             </Link>
-            );
-          })() : (
+          ) : (
             <button
               type="button"
               onClick={() => setPrioritySpotInfoOpen(true)}
               style={glassStyle}
-              className="px-2 py-3 flex flex-col items-center justify-center text-center relative overflow-hidden"
+              className="px-2 py-3 flex flex-col items-center justify-center text-center relative overflow-hidden min-w-0"
             >
               <div
                 aria-hidden
@@ -1190,27 +1211,8 @@ export default function StudentDashboard() {
               </span>
             </button>
           )}
-        </div>
 
-        {/* ── SCORE / METRIC TREND (mobile + desktop, same component) ── */}
-        <div className="order-[6] lg:order-none">
-          <DesktopScoreTrendCard studentId={profile?.id} />
-        </div>
-        <div className="hidden lg:block">
-          <DesktopPackageProgressCard studentId={profile?.id} />
-        </div>
-
-
-        {/* ── MY CHILDREN (below package progress, full width of the left column) ── */}
-        <MyChildrenCard />
-          </div>
-
-          {/* ── RIGHT COLUMN (lg+) ── */}
-          <div className="contents lg:block lg:space-y-4">
-
-        {/* ── MARGEA AI + MANAGE PLAN (side-by-side) ── */}
-        <div className="order-4 lg:order-none grid grid-cols-2 lg:grid-cols-1 gap-3">
-          {/* Always visible: paid users enter Margea AI; free users are sent to /plans by the ai-coach gate */}
+          {/* Margea IA (ES) / Margea AI (EN) */}
           <Link
             to="/ai-coach"
             style={glassStyle}
@@ -1231,30 +1233,10 @@ export default function StudentDashboard() {
               <p className="text-ivory/60 text-xs mt-0.5 truncate">{t('dashboard.apexAiSub')}</p>
             </div>
           </Link>
-
-          <Link
-            to="/videos"
-            style={glassStyle}
-            className="px-3 py-4 flex flex-col items-start gap-2 min-w-0"
-            data-tour="game-stats"
-          >
-            <div
-              className="h-9 w-9 rounded-full flex items-center justify-center flex-shrink-0"
-              style={{
-                background: 'rgba(240,192,64,0.14)',
-                border: '1px solid rgba(240,192,64,0.35)',
-              }}
-            >
-              <Video className="h-4 w-4" style={{ color: '#F0C040' }} />
-            </div>
-            <div className="min-w-0 w-full">
-              <p className="text-ivory text-sm font-semibold leading-tight">{t('admin.myVideosTitle')}</p>
-              <p className="text-ivory/60 text-xs mt-0.5 leading-snug">{t('admin.myVideosSub')}</p>
-            </div>
-          </Link>
         </div>
-
         {/* ── PURCHASES (Individual Lesson · Lesson Package · Swing Analysis) ── */}
+        {/* INICIO v4 (27 Nov 2026): Compras quitado del inicio — la compra ya vive en Reservar y en el botón +. Código conservado con false &&, no borrado. */}
+        {false && (
         <section
           style={glassStyle}
           className="order-5 lg:order-none px-4 py-4"
@@ -1358,6 +1340,7 @@ export default function StudentDashboard() {
             </button>
           </div>
         </section>
+        )}
           </div>
         </div>
 

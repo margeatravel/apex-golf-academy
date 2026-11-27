@@ -186,7 +186,10 @@ export const translations = {
       renews: 'Renews',
       // Pro Zone row inside membership card
       proZoneStar: 'Pro Zone ★',
-      proZoneRowSub: "Round Analysis & Curated Tip Library By Your Coach",
+      proZoneRowSub: 'Rounds, library and stats',
+      proZoneChipRounds: 'Rounds',
+      proZoneChipLibrary: 'Library',
+      proZoneChipStats: 'Stats',
       // Greeting fallback
       player: 'Player',
       // Lesson chip labels
@@ -1276,7 +1279,10 @@ export const translations = {
       portalLinkCopied: '¡Enlace del portal copiado!',
       renews: 'Renueva',
       proZoneStar: 'Pro Zone ★',
-      proZoneRowSub: 'Análisis De Rondas Y Biblioteca De Tips Curada Por Tu Coach',
+      proZoneRowSub: 'Rondas, biblioteca y estadísticas',
+      proZoneChipRounds: 'Rondas',
+      proZoneChipLibrary: 'Biblioteca',
+      proZoneChipStats: 'Estadísticas',
       player: 'Jugador',
       chipPriority: 'Prioritaria',
       chipCalendly: 'Calendly',
@@ -1326,7 +1332,7 @@ export const translations = {
       continueToPayment: 'Continuar al pago',
       securePaymentStripe: 'Pago seguro vía Stripe',
       // Dashboard tile labels
-      apexAi: 'Margea AI',
+      apexAi: 'Margea IA',
       apexAiSub: 'Hazle una pregunta',
       managePlan: 'Mi Plan',
       managePlanSub: 'Ver y mejorar',
