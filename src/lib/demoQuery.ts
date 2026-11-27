@@ -27,6 +27,7 @@ import {
   DEMO_COACH_ID,
   isDemoEntityId,
 } from '@/lib/demoStore';
+import { demoLessonPricing, demoSubscriptionPlanPrices } from '@/data/demoData';
 
 // ── Relation map: source table → relation key → {fk column, target table} ───
 const RELATIONS: Record<string, Record<string, { fk: string; target: string }>> = {
@@ -507,6 +508,165 @@ function demoInviteCode(): string {
   return `DEMO${code}`;
 }
 
+// ── Demo checkout (fake successful card payment) ────────────────────────────
+// Santiago's decision (27 Nov 2026): in demo, paying by card must look like a
+// SUCCESSFUL payment — a simulation. No real charge, no Stripe, no real mail,
+// nothing leaves the browser. The fake payment is recorded in the demo store
+// (stripe_payments + entitlement) so the coach sees it in revenue and the
+// student sees the success page, exactly like the real flow minus Stripe.
+
+const DEMO_PRICE_TO_TIER: Record<string, string> = {
+  price_demo_scratch: 'scratch',
+  price_demo_pro: 'pro',
+  price_demo_apex: 'apex',
+  price_1Sinw0Rw8gEMe8Y711w64DoY: 'scratch',
+  price_1SinwJRw8gEMe8Y7CVutBkBd: 'pro',
+};
+
+const DEMO_VIDEO_PRICE_IDS = new Set([
+  'price_demo_video',
+  'price_1TKlAhRw8gEMe8Y791V28Dm4',
+]);
+
+/** Who is "paying" in demo: the previewed student, else the first demo student. */
+function demoResolveCheckoutBuyer(body: any): any {
+  const students = demoGetAll('profiles').filter((p) => p.id !== DEMO_COACH_ID);
+  const byId = (id: unknown) => students.find((s) => s.id === id) ?? null;
+  // Video analysis checkout carries the analysis request it pays for.
+  const arId = body?.metadata?.analysis_request_id;
+  if (arId) {
+    const ar = demoGetAll('analysis_requests').find((r) => r.id === arId);
+    if (ar) {
+      const s = byId(ar.student_id);
+      if (s) return s;
+    }
+  }
+  // Student preview route: /admin/student-preview/:studentId
+  try {
+    if (typeof window !== 'undefined') {
+      const m = window.location.pathname.match(/\/admin\/student-preview\/([^/?#]+)/);
+      if (m) {
+        const s = byId(decodeURIComponent(m[1]));
+        if (s) return s;
+      }
+    }
+  } catch { /* ignore — fall through to the default buyer */ }
+  return students[0] ?? null;
+}
+
+function demoBuyerIsPro(buyer: any): boolean {
+  if (!buyer) return false;
+  if (String(buyer.plan_tier || '').toLowerCase() === 'pro') return true;
+  if (String(buyer.manual_plan_override || '').toLowerCase() === 'pro') return true;
+  return demoGetAll('subscriptions').some(
+    (s) => s.student_id === buyer.id && s.is_active && String(s.plan_tier || '').toLowerCase() === 'pro',
+  );
+}
+
+type DemoCheckoutClassification = {
+  purchaseType: string;
+  productName: string;
+  amountMxn: number;
+  packageSize: number;
+  tier: string | null;
+  mode: string;
+};
+
+/** Classify a create-checkout body the way the real functions do (price ids, item, mode). */
+function demoClassifyCheckout(body: any, buyer: any): DemoCheckoutClassification {
+  const mode = body?.mode === 'payment' ? 'payment' : 'subscription';
+  const qty = Math.max(1, Math.min(9, Number(body?.quantity) || 1));
+  const pro = demoBuyerIsPro(buyer);
+  const pricing: any = demoLessonPricing;
+
+  if (body?.item === 'package') {
+    const size = Number(body?.packageSize) || 10;
+    const pkg = (pricing.packages as any[]).find((p) => Number(p.lessons) === size)
+      ?? (pricing.packages as any[])[0];
+    return {
+      purchaseType: 'lesson_package',
+      productName: `${pkg.lessons}-Lesson Package${pro ? ' (Pro)' : ''}`,
+      amountMxn: Number(pro && pkg.pro_price ? pkg.pro_price : pkg.price),
+      packageSize: Number(pkg.lessons),
+      tier: null,
+      mode: 'payment',
+    };
+  }
+  if (body?.item === 'individual') {
+    const unit = Number(pro && pricing.pro_individual_price ? pricing.pro_individual_price : pricing.individual_price);
+    return {
+      purchaseType: 'individual_lesson',
+      productName: qty > 1 ? `${qty} Individual Lessons${pro ? ' (Pro)' : ''}` : `Individual Lesson${pro ? ' (Pro)' : ''}`,
+      amountMxn: unit * qty,
+      packageSize: qty,
+      tier: null,
+      mode: 'payment',
+    };
+  }
+
+  const priceId = String(body?.priceId ?? '');
+  const tier = DEMO_PRICE_TO_TIER[priceId];
+  if (tier) {
+    const prices = demoSubscriptionPlanPrices as Record<string, number>;
+    return {
+      purchaseType: 'subscription',
+      productName: tier === 'apex' ? 'Apex Level' : tier === 'pro' ? 'Pro' : 'Scratch',
+      amountMxn: prices[tier] ?? 0,
+      packageSize: 1,
+      tier,
+      mode: 'subscription',
+    };
+  }
+  if (DEMO_VIDEO_PRICE_IDS.has(priceId)) {
+    return { purchaseType: 'video_analysis', productName: 'Video Analysis', amountMxn: 550, packageSize: 1, tier: null, mode: 'payment' };
+  }
+  const pkgByPrice = (pricing.packages as any[]).find(
+    (p) => p.price_id === priceId || p.pro_price_id === priceId,
+  );
+  if (pkgByPrice) {
+    const usePro = priceId === pkgByPrice.pro_price_id;
+    return {
+      purchaseType: 'lesson_package',
+      productName: `${pkgByPrice.lessons}-Lesson Package${usePro ? ' (Pro)' : ''}`,
+      amountMxn: Number(usePro ? pkgByPrice.pro_price : pkgByPrice.price),
+      packageSize: Number(pkgByPrice.lessons),
+      tier: null,
+      mode: 'payment',
+    };
+  }
+  if (priceId === pricing.individual_price_id || priceId === pricing.pro_individual_price_id) {
+    const usePro = priceId === pricing.pro_individual_price_id;
+    const unit = Number(usePro ? pricing.pro_individual_price : pricing.individual_price);
+    return {
+      purchaseType: 'individual_lesson',
+      productName: qty > 1 ? `${qty} Individual Lessons${usePro ? ' (Pro)' : ''}` : `Individual Lesson${usePro ? ' (Pro)' : ''}`,
+      amountMxn: unit * qty,
+      packageSize: qty,
+      tier: null,
+      mode: 'payment',
+    };
+  }
+  // Fallback package price ids from the UI (used when pricing settings lack a price id).
+  const fallbackPkg: Record<string, number> = {
+    price_1TKkYkRw8gEMe8Y7CxohteUh: 10,
+    price_1TKkZBRw8gEMe8Y7ILw4uq23: 20,
+    price_1TKka4Rw8gEMe8Y734Dn03uo: 30,
+  };
+  if (fallbackPkg[priceId]) {
+    const size = fallbackPkg[priceId];
+    const pkg = (pricing.packages as any[]).find((p) => Number(p.lessons) === size);
+    return {
+      purchaseType: 'lesson_package',
+      productName: `${size}-Lesson Package`,
+      amountMxn: pkg ? Number(pkg.price) : 0,
+      packageSize: size,
+      tier: null,
+      mode: 'payment',
+    };
+  }
+  return { purchaseType: 'one_time', productName: 'Pago (demo)', amountMxn: 0, packageSize: 1, tier: null, mode };
+}
+
 export function demoInvokeFunction(name: string, body: any): any {
   switch (name) {
     case 'lookup-invite': {
@@ -672,12 +832,172 @@ export function demoInvokeFunction(name: string, body: any): any {
     case 'sync-stripe-plan':
     case 'admin-resync-subscription':
       return {};
-    case 'create-checkout':
-    case 'verify-checkout':
+    case 'create-checkout': {
+      // Fake successful card payment (demo only): record the charge + the
+      // entitlement in the demo store, then hand the caller an in-app URL so
+      // it lands on the real /payment-success page. Never Stripe, never real.
+      const buyer = demoResolveCheckoutBuyer(body);
+      const c = demoClassifyCheckout(body, buyer);
+      const sessionId = nextDemoId('csd');
+      const now = new Date();
+      const today = now.toISOString().slice(0, 10);
+      const amountCents = Math.round(c.amountMxn * 100);
+      const buyerName = buyer?.full_name || 'Alumno Demo';
+      const buyerEmail = buyer?.email || 'alumno@demo.margeagolfacademy.com';
+
+      // Entitlement, mirroring what the real verify-checkout activates.
+      let entitlement: any = null;
+      let stripeSubscriptionId: string | null = null;
+      if ((c.purchaseType === 'lesson_package' || c.purchaseType === 'individual_lesson') && buyer) {
+        const [pkg] = demoInsert('class_packages', [{
+          user_id: buyer.id,
+          package_name: c.purchaseType === 'individual_lesson'
+            ? (c.packageSize > 1 ? `${c.packageSize} Individual Lessons` : 'Individual Lesson')
+            : `${c.packageSize} Lessons Package`,
+          package_size: c.packageSize,
+          classes_remaining: c.packageSize,
+          classes_used: 0,
+          price: c.amountMxn,
+          amount_paid: c.amountMxn,
+          payment_status: 'paid',
+          payment_date: today,
+          is_active: true,
+        }]);
+        demoInsert('package_payments', [{
+          package_id: pkg.id,
+          amount: c.amountMxn,
+          payment_date: today,
+          payment_method: 'Stripe',
+          notes: `Stripe session: ${sessionId} (demo)`,
+        }]);
+        entitlement = { package_id: pkg.id, lessons_available: c.packageSize };
+      }
+      if (c.purchaseType === 'subscription' && buyer && c.tier) {
+        // Replace any active subscription the buyer already had (demo only).
+        demoUpdate('subscriptions', (r) => r.student_id === buyer.id && r.is_active, { is_active: false, status: 'canceled', canceled_at: now.toISOString() });
+        const planRow = demoGetAll('billing_plans').find((p) => String(p.stripe_price_id) === `price_demo_${c.tier}`);
+        const periodEnd = new Date(now);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        const [sub] = demoInsert('subscriptions', [{
+          student_id: buyer.id,
+          student_email: buyerEmail,
+          student_name: buyerName,
+          plan_name: c.productName,
+          plan_tier: c.tier,
+          billing_interval: 'month',
+          status: 'active',
+          started_at: now.toISOString(),
+          current_period_start: now.toISOString(),
+          current_period_end: periodEnd.toISOString(),
+          canceled_at: null,
+          cancel_at_period_end: false,
+          is_active: true,
+          student_matched: true,
+          stripe_subscription_id: `sub_demo_${sessionId}`,
+          stripe_customer_id: `cus_demo_${buyer.id}`,
+          stripe_price_id: planRow?.stripe_price_id ?? `price_demo_${c.tier}`,
+          last_synced_at: now.toISOString(),
+          billing_plan_id: planRow?.id ?? null,
+          paused_at: null,
+          archived_at: null,
+          billing_plans: { price_amount: amountCents, billing_interval: 'month', currency: 'mxn' },
+        }]);
+        stripeSubscriptionId = sub.stripe_subscription_id;
+        demoUpdate('profiles', (r) => r.id === buyer.id, { plan_tier: c.tier, effectivePlan: c.tier });
+        entitlement = { subscription_id: sub.id };
+      }
+      if (c.purchaseType === 'video_analysis') {
+        const arId = body?.metadata?.analysis_request_id;
+        const updated = arId
+          ? demoUpdate('analysis_requests', (r) => r.id === arId, { payment_status: 'paid', stripe_session_id: sessionId })
+          : [];
+        const arRow = updated[0] ?? demoInsert('analysis_requests', [{
+          student_id: buyer?.id ?? null,
+          amount: c.amountMxn,
+          payment_status: 'paid',
+          delivery_status: 'pending',
+          stripe_session_id: sessionId,
+        }])[0];
+        entitlement = { analysis_request_id: arRow.id };
+      }
+
+      // The charge itself — what the coach sees in Revenue / Stripe payments.
+      demoInsert('stripe_payments', [{
+        stripe_payment_id: `pi_demo_${sessionId}`,
+        stripe_customer_id: `cus_demo_${buyer?.id ?? 'unknown'}`,
+        stripe_subscription_id: stripeSubscriptionId,
+        customer_email: buyerEmail,
+        customer_name: buyerName,
+        amount: c.amountMxn,
+        currency: 'mxn',
+        status: 'succeeded',
+        payment_type: c.purchaseType === 'subscription' ? 'subscription' : 'one_time',
+        description: c.purchaseType === 'subscription'
+          ? `Suscripción ${c.productName}`
+          : c.purchaseType === 'video_analysis' ? 'Video Analysis'
+          : c.purchaseType === 'lesson_package' ? 'Paquete de clases'
+          : 'Clase individual',
+        paid_at: now.toISOString(),
+        created_at: now.toISOString(),
+        student_id: buyer?.id ?? null,
+        student_matched: !!buyer,
+        refund_amount: 0,
+        metadata: { demo: true, session_id: sessionId, plan_tier: c.tier },
+      }]);
+
+      // Keep buyer totals consistent + tell the coach (in-app notification only).
+      if (buyer) {
+        demoUpdate('profiles', (r) => r.id === buyer.id, { totalPaid: Number(buyer.totalPaid || 0) + c.amountMxn });
+        demoInsert('notifications', [{
+          user_id: DEMO_COACH_ID,
+          type: c.purchaseType === 'subscription' ? 'subscription' : 'payment',
+          title: c.purchaseType === 'subscription' ? `Nueva suscripción ${c.productName}` : 'Pago recibido',
+          body: `${buyerName} pagó $${c.amountMxn.toLocaleString('en-US')} MXN por ${c.productName.toLowerCase()} (demo).`,
+          link_url: '/admin/revenue',
+          metadata: { student_id: buyer.id, session_id: sessionId, demo: true },
+          read_at: null,
+        }]);
+      }
+
+      // Fake session, so /payment-success can verify it like the real flow.
+      demoInsert('demo_checkout_sessions', [{
+        id: sessionId,
+        session_id: sessionId,
+        student_id: buyer?.id ?? null,
+        student_email: buyerEmail,
+        purchase_type: c.purchaseType,
+        product_name: c.productName,
+        amount_cents: amountCents,
+        currency: 'mxn',
+        package_size: c.packageSize,
+        session_mode: c.mode,
+        entitlement,
+        created_at: now.toISOString(),
+      }]);
+
+      // In-app URL (same tab): the caller's `window.location.href = data.url`
+      // lands on the real success page. Never a Stripe URL.
+      return { url: `/payment-success?session_id=${sessionId}` };
+    }
+    case 'verify-checkout': {
+      const sid = String(body?.session_id ?? body ?? '');
+      const s = demoGetAll('demo_checkout_sessions').find((r) => r.session_id === sid || r.id === sid);
+      if (!s) return { verified: false, status: 'unpaid', message: 'Pago demo no encontrado' };
+      return {
+        verified: true,
+        purchase_type: s.purchase_type,
+        product_name: s.product_name,
+        amount: s.amount_cents,
+        currency: s.currency,
+        package_size: s.package_size,
+        entitlement: s.entitlement ?? null,
+        session_mode: s.session_mode,
+        customer_email: s.student_email,
+      };
+    }
     case 'customer-portal':
     case 'manage-my-subscription':
-      // No real checkout in demo — callers treat a missing url as a failed
-      // checkout and show an error toast. Never redirect to Stripe.
+      // No real Stripe portal in demo — callers treat a missing url as failure.
       return { url: null };
     default:
       return {};

@@ -132,6 +132,8 @@ function seed(): StoreShape {
     package_members: [],
     subscriptions: demoSubscriptions.map((r) => ({ ...r })),
     stripe_payments: demoStripePayments.map((r) => ({ ...r })),
+    // Fake checkout sessions (create-checkout → verify-checkout) — demo only.
+    demo_checkout_sessions: [],
     notifications: demoNotifications.map((r) => ({ ...r })),
     broadcast_notifications: demoBroadcastNotifications.map((r) => ({ ...r })),
     broadcast_notification_reads: [],

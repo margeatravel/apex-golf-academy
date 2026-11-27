@@ -77,8 +77,9 @@ async function main() {
   assert(demoInvokeFunction('lookup-invite', { code: 'XXXX' }).valid === false, 'lookup-invite unknown invalid');
   const accept = demoInvokeFunction('accept-invite', { code: 'demo0001' });
   assert(accept.assigned_coach_id === DEMO_COACH_ID, 'accept-invite DEMO0001 links demo coach');
-  const checkout = demoInvokeFunction('create-checkout', {});
-  assert(checkout.url === null, 'create-checkout returns no url in demo');
+  // create-checkout fake success is covered in section 16 (after the
+  // subscription-count assertion, because a demo subscription purchase
+  // changes the active-subscription count).
   const mail = demoInvokeFunction('send-notification-email', { to: 'real@x.com' });
   assert(mail && typeof mail === 'object', 'send-notification-email fake success');
 
@@ -93,6 +94,46 @@ async function main() {
   // 15. Subscriptions + billing_plans embed
   const subs = await new DemoQueryBuilder('subscriptions').select('*, billing_plans(price_amount)').eq('is_active', true);
   assert(subs.data.length === 6 && subs.data[0]?.billing_plans?.price_amount, 'subscriptions embed billing_plans');
+
+  // 16. Fake successful card payment in demo (Santiago, 27 Nov 2026)
+  // 16a. Package purchase: url goes to the in-app success page, charge +
+  //      entitlement land in the demo store, verify-checkout confirms it.
+  const spBefore = demoGetAll('stripe_payments').length;
+  const pkgBefore = demoGetAll('class_packages').length;
+  const ppBefore = demoGetAll('package_payments').length;
+  const pkgCheckout = demoInvokeFunction('create-checkout', { mode: 'payment', item: 'package', packageSize: 10 });
+  assert(typeof pkgCheckout.url === 'string' && pkgCheckout.url.startsWith('/payment-success?session_id='), `package checkout returns in-app success url (${pkgCheckout.url})`);
+  assert(demoGetAll('stripe_payments').length === spBefore + 1, 'package checkout records a stripe payment');
+  assert(demoGetAll('class_packages').length === pkgBefore + 1, 'package checkout creates the package entitlement');
+  assert(demoGetAll('package_payments').length === ppBefore + 1, 'package checkout records a package payment');
+  const pkgSession = pkgCheckout.url.split('session_id=')[1];
+  const pkgVerify = demoInvokeFunction('verify-checkout', { session_id: pkgSession });
+  assert(pkgVerify.verified === true && pkgVerify.purchase_type === 'lesson_package' && pkgVerify.package_size === 10 && pkgVerify.amount === 13000 * 100, `verify package checkout (${JSON.stringify(pkgVerify)})`);
+  assert(pkgVerify.entitlement?.package_id, 'package verify returns the entitlement');
+
+  // 16b. Subscription purchase: buyer gets an active sub + plan_tier flip.
+  const buyerId = demoGetAll('profiles')[1].id; // Carlos Mendoza (no active sub)
+  const subCheckout = demoInvokeFunction('create-checkout', { priceId: 'price_demo_pro' });
+  assert(subCheckout.url?.startsWith('/payment-success?session_id='), `subscription checkout returns success url (${subCheckout.url})`);
+  const subVerify = demoInvokeFunction('verify-checkout', { session_id: subCheckout.url.split('session_id=')[1] });
+  assert(subVerify.verified === true && subVerify.purchase_type === 'subscription' && subVerify.product_name === 'Pro' && subVerify.amount === 999 * 100, `verify subscription checkout (${JSON.stringify(subVerify)})`);
+  const buyerSub = demoGetAll('subscriptions').find((s) => s.student_id === buyerId && s.is_active);
+  assert(buyerSub?.plan_tier === 'pro', 'subscription checkout activates a Pro sub for the buyer');
+  assert(demoGetAll('profiles').find((p) => p.id === buyerId)?.plan_tier === 'pro', 'buyer plan_tier flips to pro');
+
+  // 16c. Individual lessons (quantity 2) + video analysis.
+  const indCheckout = demoInvokeFunction('create-checkout', { mode: 'payment', item: 'individual', quantity: 2 });
+  const indVerify = demoInvokeFunction('verify-checkout', { session_id: indCheckout.url.split('session_id=')[1] });
+  assert(indVerify.verified === true && indVerify.purchase_type === 'individual_lesson' && indVerify.package_size === 2 && indVerify.amount === 1500 * 2 * 100, `verify individual checkout (${JSON.stringify(indVerify)})`);
+  const arId = demoGetAll('analysis_requests')[0].id;
+  const vidCheckout = demoInvokeFunction('create-checkout', { priceId: 'price_1TKlAhRw8gEMe8Y791V28Dm4', mode: 'payment', metadata: { analysis_request_id: arId } });
+  const vidVerify = demoInvokeFunction('verify-checkout', { session_id: vidCheckout.url.split('session_id=')[1] });
+  assert(vidVerify.verified === true && vidVerify.purchase_type === 'video_analysis' && vidVerify.amount === 550 * 100, `verify video checkout (${JSON.stringify(vidVerify)})`);
+  assert(demoGetAll('analysis_requests').find((r) => r.id === arId)?.payment_status === 'paid', 'video checkout marks the analysis request paid');
+
+  // 16d. Unknown session does not verify.
+  const badVerify = demoInvokeFunction('verify-checkout', { session_id: 'csd-nope' });
+  assert(badVerify.verified === false, 'verify unknown session -> not verified');
 
   console.log('\nALL DEMO SMOKE TESTS PASSED');
 }
