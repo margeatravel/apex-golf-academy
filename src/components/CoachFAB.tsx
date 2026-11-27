@@ -92,9 +92,13 @@ export function CoachFAB() {
         </div>
       )}
 
+      {/* Botón + flotante — SOLO escritorio. En móvil el + vive dentro del
+          menú inferior de Coach (CoachBottomNav) y este botón está oculto,
+          para que no choque con la píldora. El menú y los modales de aquí
+          solo se usan en escritorio. */}
       <button
         onClick={() => setMenuOpen(!menuOpen)}
-        className="fixed z-50 flex items-center justify-center rounded-full transition-transform"
+        className="fixed z-50 hidden lg:flex items-center justify-center rounded-full transition-transform"
         style={{
           bottom: 20, right: 20, width: 56, height: 56,
           backgroundColor: '#4a7c59',
