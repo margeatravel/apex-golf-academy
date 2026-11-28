@@ -11,7 +11,7 @@ import { SignedMediaImg } from '@/components/SignedMedia';
 import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
 import { useLanguage } from '@/contexts/LanguageContext';
 
-interface PickItem {
+export interface PickItem {
   id: string;
   title: string;
   file_url: string;
@@ -64,7 +64,7 @@ interface Props {
   open: boolean;
   source: 'tour_pros' | 'mine';
   onClose: () => void;
-  onPick: (id: string) => void;
+  onPick: (id: string, item?: PickItem) => void;
 }
 
 /** Reusable picker for either Tour Pro media or the student's own swing videos. */
@@ -252,7 +252,7 @@ export function SwingPickerModal({ open, source, onClose, onPick }: Props) {
                   <Button
                     type="button"
                     onClick={() => {
-                      onPick(item.id);
+                      onPick(item.id, item);
                       setSearch('');
                       onClose();
                     }}

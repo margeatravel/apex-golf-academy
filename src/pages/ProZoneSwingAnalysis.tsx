@@ -13,6 +13,8 @@ import { LanguageToggle } from '@/components/LanguageToggle';
 import { ApexMark } from '@/components/ApexBrand';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { localeFor } from '@/lib/uiLocale';
+import { SwingPickerModal, type PickItem } from '@/components/SwingPickerModal';
+import { useSignedMediaUrl } from '@/hooks/useSignedMediaUrl';
 
 interface Fault {
   name: string;
@@ -61,6 +63,9 @@ export default function ProZoneSwingAnalysis() {
 
   const [file, setFile] = useState<File | null>(null);
   const [filePreviewUrl, setFilePreviewUrl] = useState<string | null>(null);
+  const [picked, setPicked] = useState<PickItem | null>(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickedSignedUrl = useSignedMediaUrl(picked?.file_url ?? null);
   const [notes, setNotes] = useState('');
   useEffect(() => {
     if (!file) {
@@ -107,6 +112,7 @@ export default function ProZoneSwingAnalysis() {
       setFile(null);
       return;
     }
+    setPicked(null); // a fresh upload replaces any picked video
     if (!ACCEPTED_TYPES.includes(f.type) && !/\.(mp4|mov|webm)$/i.test(f.name)) {
       toast.error(t('prozone.unsupportedFormat'));
       e.target.value = '';
@@ -122,29 +128,41 @@ export default function ProZoneSwingAnalysis() {
 
   const handleAnalyze = async () => {
     if (!user) return;
-    if (!file) {
+    if (!file && !picked) {
       toast.error(t('prozone.chooseVideoFirst'));
       return;
     }
     resetForNew();
 
     try {
-      // 1. Upload to storage
-      setUploading(true);
-      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
-      const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-      const { error: upErr } = await supabase.storage
-        .from('swing-videos')
-        .upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
-      if (upErr) throw upErr;
+      let videoUrl: string; // URL the AI fetches (signed)
+      let storedUrl: string; // URL saved with the analysis (raw path for picked videos, so replay re-signs fresh)
+      if (picked) {
+        // Video already in storage (own upload or class video) — sign it, no re-upload.
+        if (!pickedSignedUrl) throw new Error(t('prozone.couldNotAnalyze'));
+        videoUrl = pickedSignedUrl;
+        storedUrl = picked.file_url;
+      } else if (file) {
+        // 1. Upload to storage
+        setUploading(true);
+        const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const { error: upErr } = await supabase.storage
+          .from('swing-videos')
+          .upload(path, file, { contentType: file.type || 'video/mp4', upsert: false });
+        if (upErr) throw upErr;
 
-      // Signed URL so the AI gateway can fetch the (private) file
-      const { data: signed, error: signErr } = await supabase.storage
-        .from('swing-videos')
-        .createSignedUrl(path, 60 * 60); // 1 hour
-      if (signErr || !signed?.signedUrl) throw signErr ?? new Error('Could not sign video URL');
-      const videoUrl = signed.signedUrl;
-      setUploading(false);
+        // Signed URL so the AI gateway can fetch the (private) file
+        const { data: signed, error: signErr } = await supabase.storage
+          .from('swing-videos')
+          .createSignedUrl(path, 60 * 60); // 1 hour
+        if (signErr || !signed?.signedUrl) throw signErr ?? new Error('Could not sign video URL');
+        videoUrl = signed.signedUrl;
+        storedUrl = signed.signedUrl;
+        setUploading(false);
+      } else {
+        throw new Error(t('prozone.couldNotAnalyze'));
+      }
 
       // 2. Invoke edge function
       setAnalyzing(true);
@@ -156,7 +174,7 @@ export default function ProZoneSwingAnalysis() {
       if (!fb || typeof fb !== 'object') throw new Error('AI returned no feedback.');
 
       setFeedback(fb);
-      setCurrentVideoUrl(videoUrl);
+      setCurrentVideoUrl(storedUrl);
       setCurrentNotes(notes.trim());
       toast.success(t('prozone.swingAnalyzedToast'));
     } catch (err: any) {
@@ -185,6 +203,7 @@ export default function ProZoneSwingAnalysis() {
       // Collapse results and reset for a new swing
       resetForNew();
       setFile(null);
+      setPicked(null);
       setNotes('');
       if (fileInputRef.current) fileInputRef.current.value = '';
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -263,14 +282,57 @@ export default function ProZoneSwingAnalysis() {
           </div>
 
           <div className="space-y-2">
-            {!file ? (
-              <label
-                htmlFor="swing-video-input"
-                className="flex items-center justify-center gap-2 h-24 rounded-xl border border-dashed border-white/15 bg-white/[0.03] text-ivory/70 text-sm cursor-pointer hover:bg-white/[0.06] transition-colors"
-              >
-                <Upload className="h-4 w-4" />
-                <span>{t('prozone.tapToChooseVideo')}</span>
-              </label>
+            {picked ? (
+              <>
+                {pickedSignedUrl && !feedback && (
+                  <video
+                    src={pickedSignedUrl}
+                    controls
+                    muted
+                    playsInline
+                    className="w-full max-h-[220px] rounded-xl bg-black/40 border border-white/10"
+                  />
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <p className="text-ivory text-sm font-medium truncate min-w-0">
+                    {picked.title}
+                    {picked.source === 'class' && (
+                      <span className="ml-2 inline-block text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-green-accent/15 text-green-accent border border-green-accent/30 align-middle">
+                        {t('media.classVideo')}
+                      </span>
+                    )}
+                  </p>
+                  {!feedback && (
+                    <button
+                      type="button"
+                      onClick={() => setPicked(null)}
+                      className="text-xs text-ivory/50 hover:text-ivory underline shrink-0"
+                    >
+                      {t('prozone.changeVideo')}
+                    </button>
+                  )}
+                </div>
+              </>
+            ) : !file ? (
+              <>
+                <label
+                  htmlFor="swing-video-input"
+                  className="flex items-center justify-center gap-2 h-24 rounded-xl border border-dashed border-white/15 bg-white/[0.03] text-ivory/70 text-sm cursor-pointer hover:bg-white/[0.06] transition-colors"
+                >
+                  <Upload className="h-4 w-4" />
+                  <span>{t('prozone.tapToChooseVideo')}</span>
+                </label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setPickerOpen(true)}
+                  disabled={busy}
+                  className="w-full h-11 border-white/15 text-ivory hover:bg-white/5 gap-2"
+                >
+                  <VideoIcon className="h-4 w-4" />
+                  {t('prozone.chooseFromMyVideos')}
+                </Button>
+              </>
             ) : (
               <>
                 {filePreviewUrl && !feedback && (
@@ -323,7 +385,7 @@ export default function ProZoneSwingAnalysis() {
 
           <Button
             onClick={handleAnalyze}
-            disabled={busy || !file}
+            disabled={busy || (!file && !picked) || (picked && !pickedSignedUrl)}
             className="w-full h-11 bg-gold-accent text-black hover:bg-gold-accent/90 font-semibold gap-2"
           >
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
@@ -384,6 +446,20 @@ export default function ProZoneSwingAnalysis() {
             </ul>
           )}
         </section>
+
+        <SwingPickerModal
+          open={pickerOpen}
+          source="mine"
+          onClose={() => setPickerOpen(false)}
+          onPick={(_id, item) => {
+            if (item) {
+              setPicked(item);
+              setFile(null);
+              if (fileInputRef.current) fileInputRef.current.value = '';
+            }
+            setPickerOpen(false);
+          }}
+        />
       </main>
     </div>
   );
@@ -399,6 +475,9 @@ function ResultsPanel({
   saved: boolean;
 }) {
   const { t } = useLanguage();
+  // Picked class videos are stored as raw storage paths — sign them here so
+  // replay works; uploaded clips are already signed URLs and pass through.
+  const signedVideoUrl = useSignedMediaUrl(videoUrl);
   const sevLabels: Record<Fault['severity'], string> = {
     high: t('prozone.severityHigh'),
     medium: t('prozone.severityMedium'),
@@ -422,7 +501,7 @@ function ResultsPanel({
         </p>
         {videoUrl ? (
           <video
-            src={videoUrl}
+            src={signedVideoUrl ?? undefined}
             controls
             playsInline
             className="w-full rounded-xl bg-black/40 border border-white/10"
