@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Margea Golf Academy — Train with Excellence</title>
-    <meta name="description" content="Margea Golf Academy — premium coaching portal by Santiago Castilla" />
+    <meta name="description" content="Margea Golf Academy — academia de golf en Puerto Cancún, Cancún. Reserva clases con tu coach, analiza tu swing con IA, entrena en la Pro Zone y sincroniza tus clases con Google Calendar." />
     <meta name="author" content="Margea Golf Academy" />
 
     <!-- Installable web app -->
@@ -35,7 +35,24 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Static fallback: shown to crawlers and no-JS fetches (incl. Google's
+           OAuth brand verification) before the app mounts and replaces it.
+           It mirrors the public landing page: same name, same purpose. -->
+      <main style="max-width: 720px; margin: 0 auto; padding: 48px 24px; font-family: system-ui, sans-serif; color: #1a1a1a; line-height: 1.6;">
+        <h1 style="font-size: 32px; margin-bottom: 8px;">Margea Golf Academy</h1>
+        <p>La academia de golf en Puerto Cancún, Cancún. Reserva clases con tu coach, analiza tu swing con inteligencia artificial y sigue tu progreso clase a clase.</p>
+        <h2 style="font-size: 20px; margin-top: 28px;">Qué hace la aplicación</h2>
+        <ul>
+          <li><strong>Reserva tus clases:</strong> reserva clases individuales o con tu paquete, elige tu horario y a tu coach.</li>
+          <li><strong>Análisis de swing con IA:</strong> sube un video de tu swing o usa uno de tus clases y recibe retroalimentación al instante.</li>
+          <li><strong>Pro Zone y progreso:</strong> rondas, biblioteca de videos, estadísticas y reportes de avance de tu coach.</li>
+          <li><strong>Google Calendar:</strong> conecta tu calendario de Google y tus clases aparecen ahí automáticamente. Puedes desconectarlo cuando quieras desde tus Ajustes.</li>
+        </ul>
+        <p>Para usar la aplicación, inicia sesión con tu cuenta en <a href="/auth">/auth</a>. Lee nuestro <a href="/privacidad">Aviso de Privacidad</a> o escríbenos a <a href="mailto:admin@margeatravel.com">admin@margeatravel.com</a>.</p>
+        <p>Margea Golf Academy · Puerto Cancún, Cancún, Quintana Roo, México</p>
+      </main>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

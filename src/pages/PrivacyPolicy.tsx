@@ -37,7 +37,7 @@ export default function PrivacyPolicy() {
               Aviso de Privacidad de Margea Golf Academy
             </h1>
             <p className="text-sm text-ivory/50">
-              Última actualización: 1 de noviembre de 2026
+              Última actualización: 28 de noviembre de 2026
             </p>
           </header>
 
@@ -122,6 +122,74 @@ export default function PrivacyPolicy() {
                 admin@margeatravel.com
               </a>
               . Atenderemos tu solicitud a la brevedad y te confirmaremos cuando se haya completado.
+            </p>
+          </section>
+
+          <section className="glass-card p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-gold-accent">7. Permisos de Google que solicitamos</h2>
+            <p className="text-sm leading-relaxed text-ivory/80">
+              Cuando conectas tu Google Calendar, Google nos pide tu autorización para estos
+              permisos, y solo para estos fines:
+            </p>
+            <ul className="list-disc pl-5 space-y-1.5 text-sm leading-relaxed text-ivory/80">
+              <li><strong>Correo electrónico y perfil:</strong> para identificar la cuenta de Google que conectaste.</li>
+              <li><strong>Ver tu calendario (solo lectura):</strong> para mostrar tus clases junto a tus demás eventos.</li>
+              <li><strong>Crear eventos en tu calendario:</strong> para agregar tus clases reservadas a tu calendario.</li>
+            </ul>
+            <p className="text-sm leading-relaxed text-ivory/80">
+              No accedemos a tus correos, contactos, archivos de Drive ni a ningún otro dato de tu
+              cuenta de Google. No leemos ni modificamos eventos que no sean tus clases.
+            </p>
+          </section>
+
+          <section className="glass-card p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-gold-accent">8. Cookies y almacenamiento local</h2>
+            <p className="text-sm leading-relaxed text-ivory/80">
+              La aplicación guarda en tu navegador solo lo necesario para funcionar: tu sesión
+              (para no pedirte la contraseña en cada visita), tu idioma preferido y, si usas el
+              modo de demostración, sus datos de prueba (que nunca salen de tu navegador). No
+              usamos cookies de publicidad ni de seguimiento de terceros.
+            </p>
+          </section>
+
+          <section className="glass-card p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-gold-accent">9. Cuánto tiempo conservamos tus datos</h2>
+            <p className="text-sm leading-relaxed text-ivory/80">
+              Conservamos tus datos solo mientras tu cuenta esté activa y sean necesarios para
+              operar el servicio: tus clases, paquetes, videos, reportes y pagos. Cuando eliminas
+              tu cuenta o nos pides eliminar tus datos, los borramos de nuestros sistemas activos
+              y te lo confirmamos por correo.
+            </p>
+          </section>
+
+          <section className="glass-card p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-gold-accent">10. Seguridad de tus datos</h2>
+            <p className="text-sm leading-relaxed text-ivory/80">
+              Protegemos tus datos con cifrado en tránsito y en reposo, contraseñas cifradas y
+              acceso limitado: solo tu coach y el personal autorizado de la academia pueden ver
+              los datos necesarios para darte clases. Si detectamos un acceso no autorizado que
+              te afecte, te avisaremos por correo.
+            </p>
+          </section>
+
+          <section className="glass-card p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-gold-accent">11. Menores de edad</h2>
+            <p className="text-sm leading-relaxed text-ivory/80">
+              El servicio está dirigido a personas mayores de 18 años. Si eres menor de edad,
+              tu padre, madre o tutor debe crear y administrar tu cuenta, y es quien autoriza
+              el tratamiento de tus datos y la conexión de calendarios.
+            </p>
+          </section>
+
+          <section className="glass-card p-6 space-y-3">
+            <h2 className="text-lg font-semibold text-gold-accent">12. Cambios a este aviso</h2>
+            <p className="text-sm leading-relaxed text-ivory/80">
+              Podemos actualizar este aviso cuando cambie el servicio o la ley. Cuando lo hagamos,
+              actualizaremos la fecha de la parte superior de esta página y, si el cambio es
+              importante, te avisaremos por correo. Si tienes dudas sobre este aviso, escríbenos a{' '}
+              <a href="mailto:admin@margeatravel.com" className="text-gold-accent hover:underline">
+                admin@margeatravel.com
+              </a>.
             </p>
           </section>
 

@@ -20,6 +20,7 @@ import { CoachBottomNav } from "@/components/CoachBottomNav";
 import { GuidedTour } from "@/components/GuidedTour";
 import { StaffUtilityBar } from "@/components/StaffUtilityBar";
 import Auth from "./pages/Auth";
+import PublicLanding from "./pages/PublicLanding";
 import AuthCallback from "./pages/AuthCallback";
 import GoogleCalendarReturn from "./pages/oauth/GoogleCalendarReturn";
 import ForgotPassword from "./pages/ForgotPassword";
@@ -91,7 +92,9 @@ const queryClient = new QueryClient();
  * - Admins ALWAYS land on /admin (coach view) — never auto-route to /dashboard.
  * - Staff land on their first assigned scope.
  * - Students land on /dashboard.
- * - Logged-out users go to /auth.
+ * - Logged-out users see the public landing (never the login form directly:
+ *   Google's OAuth brand verification requires a homepage that names the app
+ *   and explains what it does without logging in).
  */
 const RoleHome = () => {
   const { user, role, permissions, isStaffView, loading, isRefreshingProfile } = useAuth();
@@ -102,7 +105,7 @@ const RoleHome = () => {
       </div>
     );
   }
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user) return <PublicLanding />;
   if (role === 'admin' || role === 'coach') return <Navigate to="/admin" replace />;
   if (isStaffView) {
     const target = getStaffLandingRoute(permissions);
