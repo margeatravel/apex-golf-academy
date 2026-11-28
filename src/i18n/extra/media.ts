@@ -197,6 +197,7 @@ export const media = {
     noTourProSwings: 'No Tour Pro swings available yet — Your Coach is adding them.',
     noUploadedSwings: 'You have no uploaded swing videos yet. Upload one from the Videos page first.',
     choose: 'Choose',
+    classVideo: 'Class video',
 
     // Video detail modal
     videoNotFound: 'Video not found',
@@ -450,6 +451,7 @@ export const media = {
     noTourProSwings: 'Aún no hay swings de Tour Pro disponibles — tu Coach los está agregando.',
     noUploadedSwings: 'Aún no tienes videos de swing subidos. Sube uno desde la página de Videos primero.',
     choose: 'Elegir',
+    classVideo: 'Video de clase',
 
     videoNotFound: 'Video no encontrado',
     failedToLoadVideo: 'Error al cargar el video',

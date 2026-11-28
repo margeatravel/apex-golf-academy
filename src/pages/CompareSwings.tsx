@@ -76,7 +76,17 @@ export default function CompareSwings() {
         .eq('id', mineId)
         .maybeSingle();
       if (error) throw error;
-      return data as ClipMeta | null;
+      if (data) return data as ClipMeta | null;
+      // Class videos live in student_media, not videos — same fallback as the picker.
+      const { data: media, error: mErr } = await supabase
+        .from('student_media' as any)
+        .select('id, title, file_url')
+        .eq('id', mineId)
+        .maybeSingle();
+      if (mErr) throw mErr;
+      if (!media) return null;
+      const row = media as unknown as ClipMeta;
+      return { id: row.id, title: row.title || 'Media', file_url: row.file_url };
     },
     enabled: !!mineId,
   });

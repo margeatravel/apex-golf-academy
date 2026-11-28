@@ -17,6 +17,9 @@ interface PickItem {
   file_url: string;
   thumbnail_url: string | null;
   pro_name?: string | null;
+  /** 'own' = student's own upload (videos); 'class' = coach-uploaded class video (student_media). */
+  source?: 'own' | 'class';
+  date?: string;
 }
 
 function VideoThumb({ src, alt }: { src: string; alt: string }) {
@@ -100,21 +103,46 @@ export function SwingPickerModal({ open, source, onClose, onPick }: Props) {
   const { data: myItems, isLoading: loadingMine } = useQuery({
     queryKey: ['compare-picker-mine', user?.id],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('videos')
-        .select('id, title, file_url, thumbnail_url, file_type')
-        .eq('student_id', user!.id)
-        .eq('file_type', 'video')
-        .order('upload_date', { ascending: false });
-      if (error) throw error;
-      return ((data ?? []) as any[])
+      // Own uploads (videos table) + class videos the coach uploaded
+      // for this student (student_media) — same two sources as Mis Videos.
+      const [{ data: vids, error: vErr }, { data: media, error: mErr }] = await Promise.all([
+        supabase
+          .from('videos')
+          .select('id, title, file_url, thumbnail_url, file_type, upload_date')
+          .eq('student_id', user!.id)
+          .eq('file_type', 'video')
+          .order('upload_date', { ascending: false }),
+        supabase
+          .from('student_media' as any)
+          .select('id, title, file_url, thumbnail_url, file_type, uploaded_at')
+          .eq('student_id', user!.id)
+          .order('uploaded_at', { ascending: false }),
+      ]);
+      if (vErr) throw vErr;
+      if (mErr) throw mErr;
+      const own: PickItem[] = ((vids ?? []) as any[])
         .filter((v) => isDirectVideoFile(v.file_url))
         .map((v) => ({
           id: v.id,
           title: v.title,
           file_url: v.file_url,
           thumbnail_url: v.thumbnail_url,
-        })) as PickItem[];
+          source: 'own' as const,
+          date: v.upload_date as string,
+        }));
+      const fromClass: PickItem[] = ((media ?? []) as any[])
+        .filter((m) => isDirectVideoFile(m.file_url))
+        .map((m) => ({
+          id: m.id,
+          title: m.title || 'Media',
+          file_url: m.file_url,
+          thumbnail_url: m.thumbnail_url,
+          source: 'class' as const,
+          date: m.uploaded_at as string,
+        }));
+      return [...own, ...fromClass].sort(
+        (a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime(),
+      );
     },
     enabled: open && source === 'mine' && !!user,
   });
@@ -214,6 +242,11 @@ export function SwingPickerModal({ open, source, onClose, onPick }: Props) {
                   <p style={{ color: '#ffffff', fontWeight: 700, fontSize: '14px', margin: 0 }}>
                     {displayName}
                   </p>
+                  {item.source === 'class' && (
+                    <span className="inline-block mt-1 text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-green-accent/15 text-green-accent border border-green-accent/30">
+                      {t('media.classVideo')}
+                    </span>
+                  )}
                 </div>
                 <div className="p-2 flex justify-end">
                   <Button
